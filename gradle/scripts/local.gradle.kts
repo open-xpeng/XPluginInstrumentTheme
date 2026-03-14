@@ -57,7 +57,13 @@ fun getPropertiesBuildReleasePassword(): String {
     return getPropertyFirstSystemEnv("BUILD_RELEASE_PASSWORD", "build.release.password", "")
 }
 
+fun getPropertiesBuildConfigIsRunningTestPlatform(): String {
+    return getPropertyFirstSystemEnv("BUILD_CONFIG_IS_RUNNING_TEST_PLATFORM", "build.config.is_running_test_platform", "")
+}
+
 extra["BuildVersionCode"]     = getPropertiesBuildVersionCode()
 extra["BuildVersionName"]     = getPropertiesBuildVersionName()
 extra["BuildReleasePassword"] = getPropertiesBuildReleasePassword()
+
+extra["BuildConfigIsRunningTestPlatform"] = getPropertiesBuildConfigIsRunningTestPlatform()
 

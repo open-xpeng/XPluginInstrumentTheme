@@ -31,6 +31,8 @@ android {
         versionName = rootProject.extra["BuildVersionName"] as String
         multiDexEnabled = false
         base.archivesName = "XPluginInstrumentTheme-$versionName-$versionCode"
+
+        buildConfigField(type = "Boolean", name = "IS_RUNNING_TEST_PLATFORM", value = """Boolean.parseBoolean("${rootProject.extra["BuildConfigIsRunningTestPlatform"]}")""")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -103,6 +105,6 @@ dependencies {
     compileOnly(libs.xpeng.xui)
     compileOnly(libs.xpeng.xui.manager)
 
-     compileOnly(libs.common.xposed)
+    compileOnly(libs.common.xposed)
     compileOnly(libs.common.framework)
 }

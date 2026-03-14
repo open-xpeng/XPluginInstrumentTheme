@@ -26,15 +26,16 @@ import android.view.View
 import android.view.ViewGroup
 import com.xiaopeng.instrument.view.BaseFragment
 import com.xiaopeng.instrument.widget.CardMapSurfaceView
+import com.xiaopeng.xposed.instrument.theme.BuildConfig
 import com.xiaopeng.xposed.instrument.theme.R
 import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
 import de.robv.android.xposed.XposedBridge
 
-class CenterMapFragment : BaseFragment() {
+class MapFullFragment : BaseFragment() {
 
-    private val mMapCardView: CardMapSurfaceView by lazy {
+    private val mCardMapSurfaceView: CardMapSurfaceView by lazy {
         requireView().findViewById(R.id.iv_map)
     }
 
@@ -42,7 +43,7 @@ class CenterMapFragment : BaseFragment() {
         val context: Context = inflater.context
         val moduleRes: XModuleResources = XModuleResources.createInstance(/* path = */ XposedMan.MODULE_PATH, /* origRes = */ null)
 
-        val parser = moduleRes.getLayout(/* id = */ R.layout.fragment_center_map)
+        val parser = moduleRes.getLayout(/* id = */ R.layout.fragment_map_full)
         return LayoutInflaterXposed.from(context).inflate( /* parser = */ parser, /* root = */ container, /* attachToRoot = */ false)
     }
 
@@ -50,7 +51,7 @@ class CenterMapFragment : BaseFragment() {
         super.onViewCreated(view, bundle)
 
         view.postDelayed({
-            startChangeService(width = ConstantSurfaceViewManager.SR_MAP_WIDTH, height = ConstantSurfaceViewManager.SR_MAP_HEIGHT, surface = mMapCardView.surface)
+            startChangeService(width = ConstantSurfaceViewManager.SR_MAP_WIDTH, height = ConstantSurfaceViewManager.SR_MAP_HEIGHT, surface = mCardMapSurfaceView.surface)
         }, 1000)
     }
 
@@ -61,6 +62,10 @@ class CenterMapFragment : BaseFragment() {
         intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_HEIGHT, /* value = */ height)
         intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_SURFACE, /* value = */ surface)
         intent.setClassName(/* packageName = */ ConstantSurfaceViewManager.PACKAGE_NAME, /* className = */ ConstantSurfaceViewManager.CLASS_NAME)
+
+        if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
+            return
+        }
 
         try {
             requireContext().startService(intent)
