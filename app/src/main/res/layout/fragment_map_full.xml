@@ -15,6 +15,7 @@
   -->
 
 <com.xiaopeng.xui.widget.XRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
@@ -31,5 +32,18 @@
         android:layout_height="wrap_content"
         android:text="你好，仪表盘"
         android:textColor="#ffffff" />
+
+    <com.xiaopeng.instrument.widget.NaviLaneInfoView
+        android:id="@+id/navi_lane_info"
+        android:layout_width="422dp"
+        android:layout_height="56dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="600dp"
+        android:scaleX="1"
+        android:scaleY="1"
+        android:gravity="center"
+        android:visibility="visible"
+        android:background="#4286fd"
+        tools:visibility="visible" />
 
 </com.xiaopeng.xui.widget.XRelativeLayout>

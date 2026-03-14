@@ -18,7 +18,6 @@ package com.xiaopeng.xposed.instrument.theme.hook
 
 import com.xiaopeng.xposed.instrument.theme.utils.XCMethodHookCatching
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
@@ -36,13 +35,9 @@ object MiniMapViewWrapperHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
     private val mXCMethodGetDefaultMapViewTop: XC_MethodHook = object : XCMethodHookCatching() {
         override fun afterHookedMethodCatching(param: MethodHookParam) {
             super.afterHookedMethodCatching(param)
-
-            val result = param.result as Int
-            XposedBridge.log("getDefaultMapViewTop, result=${result}")
-
-            param.result = when (result) {
+            param.result = when (param.result) {
                 363  -> 363 /* 正常卡牌偏移量 */
-                396  -> 600 /* 全屏卡牌偏移量 600指往下偏移 */
+                396  -> 560 /* 全屏卡牌偏移量 600指往下偏移 */
                 else -> param.result
             }
         }

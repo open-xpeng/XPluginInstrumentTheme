@@ -24,14 +24,21 @@ import android.view.LayoutInflater
 import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
+import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.BaseFragment
+import com.xiaopeng.instrument.viewmodel.NaviViewModel
 import com.xiaopeng.instrument.widget.CardMapSurfaceView
+import com.xiaopeng.instrument.widget.NaviLaneInfoView
 import com.xiaopeng.xposed.instrument.theme.BuildConfig
 import com.xiaopeng.xposed.instrument.theme.R
 import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
 import de.robv.android.xposed.XposedBridge
+import org.joor.Reflect
 
 class MapFullFragment : BaseFragment() {
 
@@ -47,6 +54,10 @@ class MapFullFragment : BaseFragment() {
         requireView().findViewById(R.id.iv_map)
     }
 
+    private val mNaviLaneInfoView: NaviLaneInfoView by lazy {
+        requireView().findViewById(R.id.navi_lane_info)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val context: Context = inflater.context
         val moduleRes: XModuleResources = XModuleResources.createInstance(/* path = */ XposedMan.MODULE_PATH, /* origRes = */ null)
@@ -58,9 +69,46 @@ class MapFullFragment : BaseFragment() {
     override fun onViewCreated(view: View, bundle: Bundle?) {
         super.onViewCreated(view, bundle)
 
+        initNaviLaneInfoView()
+
         view.postDelayed(/* action = */ {
             startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
         }, /* delayMillis = */ 500)
+    }
+
+    private fun initNaviLaneInfoView() {
+        val context: Context = requireContext()
+        val mLifecycleOwner: LifecycleOwner? = when (context) {
+            is LifecycleOwner -> context as LifecycleOwner
+            else              -> null
+        }
+
+        val viewModel: NaviViewModel? = when (context) {
+            is ViewModelStoreOwner -> ViewModelProvider(owner = context)[NaviViewModel::class.java]
+            else                   -> null
+        }
+
+        // val surfaceViewManager = SurfaceViewManager.getInstance()
+        // val viewModel: NaviViewModel? = Reflect.on(surfaceViewManager).field("mLeftMapCardView").get("mViewModel")
+        XposedBridge.log("initNaviLaneInfoView: $viewModel")
+        XposedBridge.log("initNaviLaneInfoView: $mLifecycleOwner")
+
+        if (viewModel == null) {
+            return
+        }
+        if (mLifecycleOwner == null) {
+            return
+        }
+
+        viewModel.naviLaneBgLiveData.observe(mLifecycleOwner) {
+            this.mNaviLaneInfoView.updateLaneBg(it)
+        }
+        viewModel.naviTollGateLaneData.observe(mLifecycleOwner) { list ->
+            this.mNaviLaneInfoView.updateTollGateData(list)
+        }
+        viewModel.naviNormalLaneData.observe(mLifecycleOwner) { array ->
+            this.mNaviLaneInfoView.updateNormalLaneData(array)
+        }
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
