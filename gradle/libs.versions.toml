@@ -1,0 +1,39 @@
+[versions]
+agp        = "9.1.0"
+kotlin     = "2.3.20-RC3"
+sdkMin     = "24"
+sdkCompile = "36"
+sdkTarget  = "36"
+
+[libraries]
+androidx-core-ktx   = "androidx.core:core-ktx:1.17.0"
+androidx-appcompat  = "androidx.appcompat:appcompat:1.7.1"
+androidx-material   = "com.google.android.material:material:1.13.0"
+androidx-constraint = "androidx.constraintlayout:constraintlayout:2.2.1"
+
+#
+# slf4j
+#
+slf4j-api       = 'org.slf4j:slf4j-api:2.0.17'
+slf4j-logback   = 'com.github.tony19:logback-android:3.0.0'
+
+#
+# commons
+#
+common-gson      = 'com.google.code.gson:gson:2.13.2'
+common-guava     = 'com.google.guava:guava:33.5.0-android'
+common-joor      = 'org.jooq:joor-java-8:0.9.15'                                # https://github.com/jOOQ/jOOR
+common-xposed    = 'de.robv.android.xposed:api:82'                              # https://mvnrepository.com/artifact/de.robv.android.xposed/api
+common-framework = 'com.rover12421.android.hide:framework:10.0.0_r2'            # https://github.com/rover12421/AndroidHideApi | https://mvnrepository.com/artifact/com.rover12421.android.hide/framework
+
+#
+# xpeng
+#
+xpeng-car           = 'io.github.xpeng:car:0.0.2'
+xpeng-xui           = 'io.github.xpeng:xui:0.0.1'
+xpeng-xui-manager   = 'io.github.xpeng:xuimanager:0.0.1'
+
+[plugins]
+android-application = { id = "com.android.application"     , version.ref = "agp"    }
+kotlin-android      = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
