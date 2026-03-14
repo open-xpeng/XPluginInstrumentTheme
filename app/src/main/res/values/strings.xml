@@ -19,5 +19,6 @@
     <string name="xposed_description">把仪表盘的地图和中间的SR调换一下位置</string>
     <array name="xposed_scope">
         <item>com.xiaopeng.instrument</item>
+        <item>com.xiaopeng.montecarlo</item>
     </array>
 </resources>

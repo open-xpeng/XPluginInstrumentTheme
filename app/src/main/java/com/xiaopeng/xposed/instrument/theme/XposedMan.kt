@@ -17,6 +17,7 @@
 package com.xiaopeng.xposed.instrument.theme
 
 import com.xiaopeng.xposed.instrument.theme.hook.MainActivityHook
+import com.xiaopeng.xposed.instrument.theme.hook.MiniMapViewWrapperHook
 import com.xiaopeng.xposed.instrument.theme.utils.HostClassLoader
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.IXposedHookZygoteInit
@@ -36,9 +37,6 @@ class XposedMan : IXposedHookLoadPackage, IXposedHookZygoteInit {
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        if (lpparam.packageName != "com.xiaopeng.instrument") {
-            return
-        }
         runCatching { handleLoadPackageCatching(loadPackageParam = lpparam) }
             .onFailure { XposedBridge.log(/* t = */ it) }
     }
@@ -46,7 +44,10 @@ class XposedMan : IXposedHookLoadPackage, IXposedHookZygoteInit {
     private fun handleLoadPackageCatching(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         HostClassLoader.injectClassLoader(hostClassLoader = loadPackageParam.classLoader)
 
-        MainActivityHook(loadPackageParam = loadPackageParam)
+        when (loadPackageParam.packageName) {
+            "com.xiaopeng.instrument" -> MainActivityHook(loadPackageParam = loadPackageParam)
+            "com.xiaopeng.montecarlo" -> MiniMapViewWrapperHook(loadPackageParam = loadPackageParam)
+        }
     }
 
 

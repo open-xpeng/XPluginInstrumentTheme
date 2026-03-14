@@ -43,10 +43,6 @@ class MapFullFragment : BaseFragment() {
         ConstantSurfaceViewManager.SR_MAP_WIDTH
     }
 
-    private val mWidgetMapRatio: Float by lazy {
-        0.5f
-    }
-
     private val mCardMapSurfaceView: CardMapSurfaceView by lazy {
         requireView().findViewById(R.id.iv_map)
     }
@@ -63,7 +59,6 @@ class MapFullFragment : BaseFragment() {
         super.onViewCreated(view, bundle)
 
         view.postDelayed(/* action = */ {
-            setCarPositionRatio(ratio = 0.5f)
             startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
         }, /* delayMillis = */ 500)
     }
@@ -71,7 +66,6 @@ class MapFullFragment : BaseFragment() {
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (hidden.not()) {
-            setCarPositionRatio(ratio = mWidgetMapRatio)
             startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
         }
     }
@@ -83,23 +77,6 @@ class MapFullFragment : BaseFragment() {
         intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_HEIGHT, /* value = */ height)
         intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_SURFACE, /* value = */ surface)
         intent.setClassName(/* packageName = */ ConstantSurfaceViewManager.PACKAGE_NAME, /* className = */ ConstantSurfaceViewManager.CLASS_NAME)
-
-        if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
-            return
-        }
-
-        try {
-            requireContext().startService(intent)
-        } catch (t: Throwable) {
-            XposedBridge.log(t)
-        }
-    }
-
-    private fun setCarPositionRatio(ratio: Float) {
-        val intent = Intent()
-        intent.setAction(/* action = */ "com.xiaopeng.montecarlo.minimap.ACTION_CHANGE_CAR_POSITION_RATIO")
-        intent.putExtra(/* name = */ "map_ratio", /* value = */ ratio)
-        intent.setClassName(/* packageName = */ "com.xiaopeng.montecarlo", /* className = */ "com.xiaopeng.montecarlo.service.minimap.MiniMapService")
 
         if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
             return
