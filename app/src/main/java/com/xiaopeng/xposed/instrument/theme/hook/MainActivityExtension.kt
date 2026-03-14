@@ -20,7 +20,5 @@ import com.xiaopeng.instrument.view.MainActivity
 import com.xiaopeng.xposed.instrument.theme.utils.ReflectPrivateFieldDelegateLong
 import com.xiaopeng.xposed.instrument.theme.utils.ReflectPrivateFieldDelegateStringOrNull
 
-var MainActivity.FIRST_TIME: Long by ReflectPrivateFieldDelegateLong(name = "FIRST_TIME")
-
 var MainActivity.mCurrentFragmentName: String? by ReflectPrivateFieldDelegateStringOrNull(name = "mCurrentFragmentName")
 

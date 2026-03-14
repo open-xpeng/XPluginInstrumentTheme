@@ -22,6 +22,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.xiaopeng.instrument.bean.GearType
 import com.xiaopeng.instrument.view.MainActivity
+import com.xiaopeng.instrument.view.MainFragment
 import com.xiaopeng.instrument.viewmodel.InfoViewModel
 import com.xiaopeng.xposed.instrument.theme.extensions.getResourceId
 import com.xiaopeng.xposed.instrument.theme.fragments.MapFullFragment
@@ -34,112 +35,132 @@ import org.joor.Reflect
 
 object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
+    private val mFragmentTag: String = MapFullFragment::class.java.name
+
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         XposedHelpers.findAndHookMethod(
             /* clazz        = */ MainActivity::class.java,
             /* methodName   = */ "onCreate",
             /* ...parameterTypesAndCallback = */Bundle::class.java, mXCMethodOnViewCreated
         )
+
+        XposedHelpers.findAndHookMethod(
+            /* clazz        = */ MainActivity::class.java,
+            /* methodName   = */ "showFragmentByClass",
+            /* ...parameterTypesAndCallback = */Class::class.java, mXCMethodOnShowFragmentByClass
+        )
+    }
+
+    private val mXCMethodOnShowFragmentByClass: XC_MethodHook = object : XCMethodHookCatching() {
+
+        override fun beforeHookedMethodCatching(param: MethodHookParam) {
+            super.beforeHookedMethodCatching(param)
+            val activity: MainActivity = param.thisObject as MainActivity
+            val targetFragmentClass = param.args[0] as Class<*>
+            XposedBridge.log(/* text = */ "MainActivityHook:OnShowFragmentByClass: targetFragmentClass=${targetFragmentClass}")
+
+            if (targetFragmentClass != MainFragment::class.java) {
+                return
+            }
+
+            val infoViewModel = ViewModelProvider(owner = activity)[InfoViewModel::class.java]
+            if (infoViewModel.gearLiveData.value != GearType.GEAR_D) {
+                return
+            }
+
+            showMapFullFragment(activity = activity)
+            param.result = null
+        }
     }
 
     private val mXCMethodOnViewCreated: XC_MethodHook = object : XCMethodHookCatching() {
         override fun afterHookedMethodCatching(param: MethodHookParam) {
             super.afterHookedMethodCatching(param)
 
-            val thiz: MainActivity = param.thisObject as MainActivity
-            val infoViewModel = ViewModelProvider(owner = thiz)[InfoViewModel::class.java]
+            val activity: MainActivity = param.thisObject as MainActivity
+            val infoViewModel = ViewModelProvider(owner = activity)[InfoViewModel::class.java]
 
-            infoViewModel.gearLiveData.observe(/* owner = */ thiz, /* observer = */ OnGearLiveDataChanged(mainActivity = thiz))
+            infoViewModel.gearLiveData.observe(/* owner = */ activity, /* observer = */ OnGearLiveDataChanged(mainActivity = activity))
         }
 
         inner class OnGearLiveDataChanged(private val mainActivity: MainActivity) : Observer<Int> {
-            private val mFragmentTag: String = MapFullFragment::class.java.name
-            private var mFragmentPrevious: String? = null
 
             override fun onChanged(value: Int) {
                 XposedBridge.log("MainActivityHook:OnGearLiveDataChanged:onChanged value=$value")
                 when (value) {
-                    GearType.GEAR_D -> showMapFullFragment()
-                    else            -> hideMapFullFragment()
+                    GearType.GEAR_D -> showMapFullFragment(mainActivity)
+                    else            -> hideMapFullFragment(mainActivity)
                 }
-            }
-
-            private fun showMapFullFragment() {
-                val fragmentManager: FragmentManager = mainActivity.supportFragmentManager
-
-                // 已经在显示，无需重复操作
-                val currentFragmentName: String? = mainActivity.mCurrentFragmentName
-                if (currentFragmentName == mFragmentTag) {
-                    return
-                }
-
-                // 启动 Fragment 切换动画
-                Reflect
-                    .on(/* object = */ mainActivity)
-                    .field(/* name = */ "mFragChangeAnimView")
-                    .call(/* name = */ "startFragmentChangeAnim", /* ...args = */ mainActivity.FIRST_TIME)
-
-                val transaction = fragmentManager.beginTransaction()
-
-                // 隐藏当前 Fragment，并记录以便退出 D 挡时恢复
-                if (!currentFragmentName.isNullOrBlank()) {
-                    mFragmentPrevious = currentFragmentName
-                    val currentFragment = fragmentManager.findFragmentByTag(currentFragmentName)
-                    if (currentFragment != null) {
-                        transaction.hide(currentFragment)
-                    }
-                }
-
-                // 添加或显示 MapFullFragment
-                val mapFragment = fragmentManager.findFragmentByTag(mFragmentTag) as? MapFullFragment
-                if (mapFragment == null) {
-                    val fragment = MapFullFragment()
-                    val containerId = mainActivity.getResourceId(/* type = */ "id", /* name = */ "fragment_container")
-                    transaction.add(/* containerViewId = */ containerId, /* fragment = */ fragment, /* tag = */ mFragmentTag)
-                } else {
-                    transaction.show(mapFragment)
-                }
-
-                transaction.commitNow()
-                mainActivity.mCurrentFragmentName = mFragmentTag
-            }
-
-            private fun hideMapFullFragment() {
-                // MapFullFragment 未在显示，无需操作
-                if (mainActivity.mCurrentFragmentName != mFragmentTag) {
-                    return
-                }
-
-                val fragmentManager: FragmentManager = mainActivity.supportFragmentManager
-                val transaction = fragmentManager.beginTransaction()
-
-                // 隐藏 MapFullFragment
-                val mapFragment = fragmentManager.findFragmentByTag(mFragmentTag)
-                if (mapFragment != null) {
-                    transaction.hide(mapFragment)
-                }
-
-                // 恢复之前的 Fragment
-                val prevName = mFragmentPrevious
-                mFragmentPrevious = null
-                mainActivity.mCurrentFragmentName = prevName
-
-                if (prevName.isNullOrEmpty()) {
-                    transaction.commitNow()
-                    return
-                }
-
-                val prevFragment = fragmentManager.findFragmentByTag(prevName)
-                if (prevFragment == null) {
-                    transaction.commitNow()
-                    return
-                }
-
-                transaction.show(prevFragment)
-                transaction.commitNow()
             }
         }
 
+    }
+
+    private fun showMapFullFragment(activity: MainActivity) {
+        val fragmentManager: FragmentManager = activity.supportFragmentManager
+
+        // 已经在显示，无需重复操作
+        val currentFragmentName: String? = activity.mCurrentFragmentName
+        if (currentFragmentName == mFragmentTag) {
+            return
+        }
+
+        // 启动 Fragment 切换动画
+        Reflect
+            .on(/* object = */ activity)
+            .field(/* name = */ "mFragChangeAnimView")
+            .call(/* name = */ "startFragmentChangeAnim", /* ...args = */ 300L)
+
+        val transaction = fragmentManager.beginTransaction()
+
+        // 隐藏当前 Fragment，并记录以便退出 D 挡时恢复
+        if (!currentFragmentName.isNullOrBlank()) {
+            val currentFragment = fragmentManager.findFragmentByTag(currentFragmentName)
+            if (currentFragment != null) {
+                transaction.hide(currentFragment)
+            }
+        }
+
+        // 添加或显示 MapFullFragment
+        val mapFragment = fragmentManager.findFragmentByTag(mFragmentTag) as? MapFullFragment
+        if (mapFragment == null) {
+            val fragment = MapFullFragment()
+            val containerId = activity.getResourceId(/* type = */ "id", /* name = */ "fragment_container")
+            transaction.add(/* containerViewId = */ containerId, /* fragment = */ fragment, /* tag = */ mFragmentTag)
+        } else {
+            transaction.show(mapFragment)
+        }
+
+        transaction.commitNow()
+        activity.mCurrentFragmentName = mFragmentTag
+    }
+
+    private fun hideMapFullFragment(activity: MainActivity) {
+        // MapFullFragment 未在显示，无需操作
+        if (activity.mCurrentFragmentName != mFragmentTag) {
+            return
+        }
+
+        val fragmentManager: FragmentManager = activity.supportFragmentManager
+        val transaction = fragmentManager.beginTransaction()
+
+        // 隐藏 MapFullFragment
+        val mapFragment = fragmentManager.findFragmentByTag(mFragmentTag)
+        if (mapFragment != null) {
+            transaction.hide(mapFragment)
+        }
+
+        val mainFragmentTag: String = MainFragment::class.java.name
+        activity.mCurrentFragmentName = MainFragment::class.java.name
+
+        val prevFragment = fragmentManager.findFragmentByTag(mainFragmentTag)
+        if (prevFragment == null) {
+            transaction.commitNow()
+            return
+        }
+
+        transaction.show(prevFragment)
+        transaction.commitNow()
     }
 
 }

@@ -31,4 +31,5 @@
         android:layout_height="wrap_content"
         android:text="你好，仪表盘"
         android:textColor="#ffffff"/>
+
 </com.xiaopeng.xui.widget.XRelativeLayout>
