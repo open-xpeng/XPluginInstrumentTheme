@@ -36,7 +36,7 @@ import de.robv.android.xposed.XposedBridge
 class MapFullFragment : BaseFragment() {
 
     private val mWidgetMapHeight: Int by lazy {
-        ConstantSurfaceViewManager.SR_MAP_HEIGHT /* 1920 */ + 720 /* 让箭头稍微下的偏移量 */
+        ConstantSurfaceViewManager.SR_MAP_HEIGHT
     }
 
     private val mWidgetMapWidth: Int by lazy {
@@ -60,7 +60,7 @@ class MapFullFragment : BaseFragment() {
 
         view.postDelayed(/* action = */ {
             startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
-        }, /* delayMillis = */ 1000)
+        }, /* delayMillis = */ 500)
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
