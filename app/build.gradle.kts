@@ -50,6 +50,9 @@ android {
         resources.excludes.add("META-INF/com/android/**")
         resources.excludes.add("META-INF/version-control-info.textproto")
     }
+    aaptOptions {
+        additionalParameters("--allow-reserved-package-id", "--package-id", "0x66")
+    }
     signingConfigs {
         getByName("debug") {
             storeFile = file("app.jks")

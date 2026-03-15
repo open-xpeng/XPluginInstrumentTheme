@@ -20,6 +20,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
+import com.xiaopeng.xposed.instrument.theme.XposedMan
 import de.robv.android.xposed.XposedBridge
 import org.joor.Reflect
 
@@ -27,19 +28,32 @@ object LayoutInflaterXposed {
 
     fun from(context: Context): LayoutInflater {
         val mixedInflater: LayoutInflater = LayoutInflater.from(context)
-        val factory = Factory(classLoader = context::class.java.classLoader)
+        val factory = Factory(classLoader = LayoutInflaterXposed::class.java.classLoader)
         Reflect.on(/* object = */ mixedInflater).set("mPrivateFactory", factory)
         return mixedInflater
     }
 
     private class Factory(private val classLoader: ClassLoader?) : LayoutInflater.Factory2 {
         override fun onCreateView(parent: View?, name: String, context: Context, attrs: AttributeSet): View? {
-            return try {
+            val view1: View? = try {
                 Reflect.onClass(/* name = */ name, /* classLoader = */ classLoader).create(context, attrs).get<View>()
             } catch (e: Exception) {
-                XposedBridge.log(/* t = */ e)
                 null
             }
+            if (view1 != null) {
+                return view1
+            }
+
+            val view2: View? = try {
+                Reflect.onClass(/* name = */ name, /* classLoader = */ XposedMan.MODULE_CLASS_LOADER).create(context, attrs).get<View>()
+            } catch (e: Exception) {
+                null
+            }
+            if (view2 != null) {
+                return view2
+            }
+
+            return null
         }
 
         override fun onCreateView(name: String, context: Context, attrs: AttributeSet): View? {

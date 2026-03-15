@@ -27,23 +27,34 @@
         android:layout_centerVertical="true"
         android:background="@android:color/transparent" />
 
-    <androidx.appcompat.widget.AppCompatTextView
-        android:layout_width="wrap_content"
+    <com.xiaopeng.xui.widget.XImageView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="你好，仪表盘"
-        android:textColor="#ffffff" />
+        android:src="@drawable/fragment_map_top_mask" />
+
+    <com.xiaopeng.instrument.widget.sr.SRLeftInfoViewGroup
+        android:id="@+id/main_left_info"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="@dimen/info_width"
+        android:layout_alignParentStart="true"/>
+
+    <com.xiaopeng.instrument.widget.sr.SRRightInfoViewGroup
+        android:id="@+id/main_right_info"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:minWidth="@dimen/info_width"
+        android:layout_alignParentEnd="true"/>
 
     <com.xiaopeng.instrument.widget.NaviLaneInfoView
         android:id="@+id/navi_lane_info"
-        android:layout_width="422dp"
+        android:layout_width="wrap_content"
         android:layout_height="56dp"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="600dp"
-        android:scaleX="1"
-        android:scaleY="1"
+        android:background="@drawable/fragment_map_navi_bg_lane"
         android:gravity="center"
-        android:visibility="visible"
-        android:background="#4286fd"
+        android:visibility="gone"
         tools:visibility="visible" />
 
 </com.xiaopeng.xui.widget.XRelativeLayout>

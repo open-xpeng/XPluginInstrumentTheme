@@ -29,6 +29,8 @@ class XposedMan : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
         lateinit var MODULE_PATH: String
             private set
+        lateinit var MODULE_CLASS_LOADER: ClassLoader
+            private set
 
     }
 
@@ -42,6 +44,7 @@ class XposedMan : IXposedHookLoadPackage, IXposedHookZygoteInit {
     }
 
     private fun handleLoadPackageCatching(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
+        MODULE_CLASS_LOADER = loadPackageParam.classLoader
         HostClassLoader.injectClassLoader(hostClassLoader = loadPackageParam.classLoader)
 
         when (loadPackageParam.packageName) {

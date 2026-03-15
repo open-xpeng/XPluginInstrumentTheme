@@ -22,6 +22,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 
 @SuppressWarnings("unused")
 /* JADX INFO: loaded from: classes.dex */
@@ -66,6 +68,10 @@ public class BaseFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         throw new RuntimeException("Stub!");
+    }
+
+    public <T> void setLiveDataObserver(LiveData<T> liveData, Observer<T> observer) {
+        liveData.observe(this, observer);
     }
 
 }

@@ -8,4 +8,5 @@
 ## 调试
 ```shell
 ps -elf | grep -w 'com.xiaopeng.instrument' | grep -v 'grep' | awk '{print $2}' | xargs kill -9
+ps -elf | grep -w 'com.xiaopeng.montecarlo' | grep -v 'grep' | awk '{print $2}' | xargs kill -9
 ```

@@ -25,6 +25,7 @@ import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.MainActivity
 import com.xiaopeng.instrument.view.MainFragment
 import com.xiaopeng.instrument.viewmodel.InfoViewModel
+import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.extensions.getResourceId
 import com.xiaopeng.xposed.instrument.theme.fragments.MapFullFragment
 import com.xiaopeng.xposed.instrument.theme.utils.XCMethodHookCatching
@@ -80,6 +81,9 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
             val activity: MainActivity = param.thisObject as MainActivity
             val infoViewModel = ViewModelProvider(owner = activity)[InfoViewModel::class.java]
+
+            // 添加模块资源
+            XposedHelpers.callMethod(/* obj = */ activity.getResources().assets, /* methodName = */ "addAssetPath", /* ...args = */ XposedMan.MODULE_PATH);
 
             infoViewModel.gearLiveData.observe(/* owner = */ activity, /* observer = */ OnGearLiveDataChanged(mainActivity = activity))
         }
