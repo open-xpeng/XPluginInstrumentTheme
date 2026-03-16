@@ -18,17 +18,18 @@ package com.xiaopeng.xposed.instrument.theme.fragments
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.content.res.XModuleResources
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.postDelayed
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
-import com.xiaopeng.instrument.bean.InfoContainBean
 import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.BaseFragment
 import com.xiaopeng.instrument.viewmodel.NaviViewModel
@@ -37,43 +38,29 @@ import com.xiaopeng.instrument.widget.CardMapSurfaceView
 import com.xiaopeng.instrument.widget.NaviLaneInfoView
 import com.xiaopeng.instrument.widget.sr.SRLeftInfoViewGroup
 import com.xiaopeng.instrument.widget.sr.SRRightInfoViewGroup
+import com.xiaopeng.libtheme.ThemeManager
 import com.xiaopeng.xposed.instrument.theme.BuildConfig
 import com.xiaopeng.xposed.instrument.theme.R
 import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
+import com.xiaopeng.xui.widget.XImageView
 import de.robv.android.xposed.XposedBridge
-import org.joor.Reflect
 
 class MapFullFragment : BaseFragment() {
 
-    private val mInfoViewModel: SRInfoViewModel by lazy {
-        ViewModelProvider(requireActivity())[SRInfoViewModel::class.java]
-    }
+    private val mInfoViewModel: SRInfoViewModel by lazy { ViewModelProvider(requireActivity())[SRInfoViewModel::class.java] }
 
-    private val mWidgetMapHeight: Int by lazy {
-        ConstantSurfaceViewManager.SR_MAP_HEIGHT
-    }
+    // @formatter:off
+    private val mWidgetMapHeight: Int by lazy { ConstantSurfaceViewManager.SR_MAP_HEIGHT }
+    private val mWidgetMapWidth : Int by lazy { ConstantSurfaceViewManager.SR_MAP_WIDTH  }
 
-    private val mWidgetMapWidth: Int by lazy {
-        ConstantSurfaceViewManager.SR_MAP_WIDTH
-    }
-
-    private val mCardMapSurfaceView: CardMapSurfaceView by lazy {
-        requireView().findViewById(R.id.iv_map)
-    }
-
-    private val mNaviLaneInfoView: NaviLaneInfoView by lazy {
-        requireView().findViewById(R.id.navi_lane_info)
-    }
-
-    private val mLeftInfoViewGroup: SRLeftInfoViewGroup by lazy {
-        requireView().findViewById(R.id.main_left_info)
-    }
-
-    private val mRightInfoViewGroup: SRRightInfoViewGroup by lazy {
-        requireView().findViewById(R.id.main_right_info)
-    }
+    private val mCardMapSurfaceView: CardMapSurfaceView   by lazy { requireView().findViewById(R.id.iv_map)          }
+    private val mNaviLaneInfoView  : NaviLaneInfoView     by lazy { requireView().findViewById(R.id.navi_lane_info)  }
+    private val mTopMaskImageView  : XImageView           by lazy { requireView().findViewById(R.id.iv_top_mask)     }
+    private val mLeftInfoViewGroup : SRLeftInfoViewGroup  by lazy { requireView().findViewById(R.id.main_left_info)  }
+    private val mRightInfoViewGroup: SRRightInfoViewGroup by lazy { requireView().findViewById(R.id.main_right_info) }
+    // @formatter:on
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val context: Context = inflater.context
@@ -90,7 +77,11 @@ class MapFullFragment : BaseFragment() {
         initObservers()
 
         this.mNaviLaneInfoView.setBackgroundResource(R.drawable.fragment_map_navi_bg_lane)
-        view.postDelayed(/* action = */ { onResume() }, /* delayMillis = */ 500)
+
+        view.postDelayed(delayInMillis = 500) {
+            SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
+            startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
+        }
     }
 
     private fun initNaviLaneInfoView() {
@@ -130,49 +121,35 @@ class MapFullFragment : BaseFragment() {
     }
 
     private fun initObservers() {
-        setLiveDataObserver(this.mInfoViewModel.leftSubCardLiveData) {
-            this.showLeftSubCardView(it)
-        }
-        setLiveDataObserver(this.mInfoViewModel.rightSubCardLiveData) {
-            this.showSubRightCardView(it);
-        }
-        setLiveDataObserver(this.mInfoViewModel.leftCardLiveData) {
-            this.showLeftCardView(it);
-        };
-        setLiveDataObserver(this.mInfoViewModel.rightCardLiveData) {
-            this.showRightCardView(it);
-        }
-        setLiveDataObserver(this.mInfoViewModel.leftListIndexLiveData) {
-            this.updateLeftListHighPosition(it);
-        }
-        setLiveDataObserver(this.mInfoViewModel.leftListLiveData) {
-            this.updateLeftListData(it);
-        }
-        setLiveDataObserver(this.mInfoViewModel.leftListInfoLiveData) {
-            this.showLeftListView(it);
-        }
-        setLiveDataObserver(this.mInfoViewModel.rightListIndexLiveData) {
-            this.updateRightListHighPosition(it);
-        }
-        setLiveDataObserver(this.mInfoViewModel.rightListLiveData) {
-            this.updateRightListData(it);
-        }
-        setLiveDataObserver(this.mInfoViewModel.rightListInfoLiveData) {
-            this.showRightListView(it);
-        }
-
-
+        // @formatter:off
+        setLiveDataObserver(this.mInfoViewModel.leftSubCardLiveData   , observer { this.mLeftInfoViewGroup .showSubCardView(it)      })
+        setLiveDataObserver(this.mInfoViewModel.rightSubCardLiveData  , observer { this.mRightInfoViewGroup.showSubCardView(it)      })
+        setLiveDataObserver(this.mInfoViewModel.leftCardLiveData      , observer { this.mLeftInfoViewGroup .showCardView(it)         })
+        setLiveDataObserver(this.mInfoViewModel.rightCardLiveData     , observer { this.mRightInfoViewGroup.showCardView(it)         })
+        setLiveDataObserver(this.mInfoViewModel.leftListIndexLiveData , observer { this.mLeftInfoViewGroup .updateListHighIndex(it)  })
+        setLiveDataObserver(this.mInfoViewModel.leftListLiveData      , observer { this.mLeftInfoViewGroup .updateListData(it)       })
+        setLiveDataObserver(this.mInfoViewModel.leftListInfoLiveData  , observer { this.mLeftInfoViewGroup .showList(it)             })
+        setLiveDataObserver(this.mInfoViewModel.rightListIndexLiveData, observer { this.mRightInfoViewGroup.updateListHighIndex(it)  })
+        setLiveDataObserver(this.mInfoViewModel.rightListLiveData     , observer { this.mRightInfoViewGroup.updateListData(it)       })
+        setLiveDataObserver(this.mInfoViewModel.rightListInfoLiveData , observer { this.mRightInfoViewGroup.showList(it)             })
+        // @formatter:on
     }
 
-    override fun onResume() {
-        super.onResume()
-        SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
-        startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val isisThemeChanged = ThemeManager.isThemeChanged(newConfig)
+        XposedBridge.log("onConfigurationChanged: $isisThemeChanged")
+
+        if (isisThemeChanged) {
+            // val isNightMode: Boolean = ThemeManager.isNightMode(requireContext())
+            mTopMaskImageView.setBackgroundResource(R.drawable.fragment_map_top_mask)
+        }
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (hidden.not()) {
+            SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
             startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
         }
     }
@@ -196,53 +173,15 @@ class MapFullFragment : BaseFragment() {
         }
     }
 
-    fun showLeftListView(z: Boolean) {
-        this.mLeftInfoViewGroup.showList(z)
-    }
-
-    fun showRightListView(z: Boolean) {
-        this.mRightInfoViewGroup.showList(z)
-    }
-
-    fun showLeftCardView(z: Boolean) {
-        this.mLeftInfoViewGroup.showCardView(z)
-    }
-
-    fun showRightCardView(z: Boolean) {
-        this.mRightInfoViewGroup.showCardView(z)
-    }
-
-    fun updateLeftListData(infoContainBean: InfoContainBean) {
-        this.mLeftInfoViewGroup.updateListData(infoContainBean)
-    }
-
-    fun updateRightListData(infoContainBean: InfoContainBean) {
-        this.mRightInfoViewGroup.updateListData(infoContainBean)
-    }
-
-    fun updateLeftListHighPosition(i: Int) {
-        this.mLeftInfoViewGroup.updateListHighIndex(i)
-    }
-
-    fun updateRightListHighPosition(i: Int) {
-        this.mRightInfoViewGroup.updateListHighIndex(i)
-    }
-
-    fun showLeftSubCardView(i: Int) {
-        this.mLeftInfoViewGroup.showSubCardView(i)
-        XposedBridge.log("showLeftSubCardView: $i")
-        if (i == 0) {
-            this.mLeftInfoViewGroup.postDelayed({ onResume() }, 2000)
-        }
-
-    }
-
-    fun showSubRightCardView(i: Int) {
-        this.mRightInfoViewGroup.showSubCardView(i)
-        if (i == 0) {
-            this.mRightInfoViewGroup.postDelayed({ onResume() }, 200)
+    private fun <T> observer(block: (value: T) -> Unit): Observer<T> {
+        return object : Observer<T> {
+            override fun onChanged(value: T) {
+                if (isHidden) {
+                    return
+                }
+                block(value)
+            }
         }
     }
-
 
 }

@@ -21,7 +21,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.xiaopeng.instrument.bean.GearType
-import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.MainActivity
 import com.xiaopeng.instrument.view.MainFragment
 import com.xiaopeng.instrument.viewmodel.InfoViewModel
@@ -40,26 +39,19 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
     private val mFragmentTag: String = MapFullFragment::class.java.name
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-        XposedHelpers.findAndHookMethod(
-            /* clazz        = */ MainActivity::class.java,
-            /* methodName   = */ "onCreate",
-            /* ...parameterTypesAndCallback = */Bundle::class.java, mXCMethodOnViewCreated
-        )
-
-        XposedHelpers.findAndHookMethod(
-            /* clazz        = */ MainActivity::class.java,
-            /* methodName   = */ "showFragmentByClass",
-            /* ...parameterTypesAndCallback = */Class::class.java, mXCMethodOnShowFragmentByClass
-        )
+        // @formatter:off
+        XposedHelpers.findAndHookMethod(MainActivity::class.java, "onCreate"           , Bundle::class.java, mXCMethodOnViewCreated       )
+        XposedHelpers.findAndHookMethod(MainActivity::class.java, "showFragmentByClass", Class::class.java , mXCMethodShowFragmentByClass )
+        XposedHelpers.findAndHookMethod(MainActivity::class.java, "updateAirVolume"    , Int::class.java   , mXCMethodUpdateAirVolume     )
+        // @formatter:on
     }
 
-    private val mXCMethodOnShowFragmentByClass: XC_MethodHook = object : XCMethodHookCatching() {
+    private val mXCMethodShowFragmentByClass: XC_MethodHook = object : XCMethodHookCatching() {
 
         override fun beforeHookedMethodCatching(param: MethodHookParam) {
             super.beforeHookedMethodCatching(param)
             val activity: MainActivity = param.thisObject as MainActivity
             val targetFragmentClass = param.args[0] as Class<*>
-            XposedBridge.log(/* text = */ "MainActivityHook:OnShowFragmentByClass: targetFragmentClass=${targetFragmentClass}")
 
             if (targetFragmentClass != MainFragment::class.java) {
                 return
@@ -91,7 +83,6 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         inner class OnGearLiveDataChanged(private val mainActivity: MainActivity) : Observer<Int> {
 
             override fun onChanged(value: Int) {
-                XposedBridge.log("MainActivityHook:OnGearLiveDataChanged:onChanged value=$value")
                 when (value) {
                     GearType.GEAR_D -> showMapFullFragment(mainActivity)
                     else            -> hideMapFullFragment(mainActivity)
@@ -99,6 +90,19 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             }
         }
 
+    }
+
+    private val mXCMethodUpdateAirVolume: XC_MethodHook = object : XCMethodHookCatching() {
+        override fun afterHookedMethodCatching(param: MethodHookParam) {
+            super.afterHookedMethodCatching(param)
+            val activity: MainActivity = param.thisObject as MainActivity
+            val value: Int = param.args[0] as Int
+            XposedBridge.log("MainActivityHook:XCMethodUpdateAirVolume value=${value}")
+            when (value) {
+                1 -> showMapFullFragment(activity)
+                2 -> hideMapFullFragment(activity)
+            }
+        }
     }
 
     private fun showMapFullFragment(activity: MainActivity) {

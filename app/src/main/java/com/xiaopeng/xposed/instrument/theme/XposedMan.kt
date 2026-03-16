@@ -17,6 +17,7 @@
 package com.xiaopeng.xposed.instrument.theme
 
 import com.xiaopeng.xposed.instrument.theme.hook.MainActivityHook
+import com.xiaopeng.xposed.instrument.theme.hook.MainFragmentHook
 import com.xiaopeng.xposed.instrument.theme.hook.MiniMapViewWrapperHook
 import com.xiaopeng.xposed.instrument.theme.utils.HostClassLoader
 import de.robv.android.xposed.IXposedHookLoadPackage
@@ -29,9 +30,9 @@ class XposedMan : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
         lateinit var MODULE_PATH: String
             private set
+
         lateinit var MODULE_CLASS_LOADER: ClassLoader
             private set
-
     }
 
     override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam) {
@@ -48,7 +49,10 @@ class XposedMan : IXposedHookLoadPackage, IXposedHookZygoteInit {
         HostClassLoader.injectClassLoader(hostClassLoader = loadPackageParam.classLoader)
 
         when (loadPackageParam.packageName) {
-            "com.xiaopeng.instrument" -> MainActivityHook(loadPackageParam = loadPackageParam)
+            "com.xiaopeng.instrument" -> {
+                MainActivityHook(loadPackageParam = loadPackageParam)
+                MainFragmentHook(loadPackageParam = loadPackageParam)
+            }
             "com.xiaopeng.montecarlo" -> MiniMapViewWrapperHook(loadPackageParam = loadPackageParam)
         }
     }

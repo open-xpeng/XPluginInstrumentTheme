@@ -28,6 +28,7 @@
         android:background="@android:color/transparent" />
 
     <com.xiaopeng.xui.widget.XImageView
+        android:id="@+id/iv_top_mask"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:src="@drawable/fragment_map_top_mask" />
