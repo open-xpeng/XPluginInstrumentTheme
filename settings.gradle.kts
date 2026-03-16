@@ -36,4 +36,3 @@ dependencyResolutionManagement {
 rootProject.name = "XPluginInstrumentTheme"
 include(/* ...projectPaths = */ ":app")
 include(/* ...projectPaths = */ ":stub")
-include(/* ...projectPaths = */ ":target")
