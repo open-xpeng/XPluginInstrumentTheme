@@ -31,21 +31,22 @@
         android:id="@+id/iv_top_mask"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:src="@drawable/fragment_map_top_mask" />
+        android:src="@drawable/fragment_map_top_mask"
+        android:visibility="gone" />
 
     <com.xiaopeng.instrument.widget.sr.SRLeftInfoViewGroup
         android:id="@+id/main_left_info"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:minWidth="@dimen/info_width"
-        android:layout_alignParentStart="true"/>
+        android:layout_alignParentStart="true"
+        android:minWidth="@dimen/info_width" />
 
     <com.xiaopeng.instrument.widget.sr.SRRightInfoViewGroup
         android:id="@+id/main_right_info"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:minWidth="@dimen/info_width"
-        android:layout_alignParentEnd="true"/>
+        android:layout_alignParentEnd="true"
+        android:minWidth="@dimen/info_width" />
 
     <com.xiaopeng.instrument.widget.NaviLaneInfoView
         android:id="@+id/navi_lane_info"
