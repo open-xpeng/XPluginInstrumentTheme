@@ -96,11 +96,6 @@ class MapFullFragment : BaseFragment() {
             else                   -> null
         }
 
-        // val surfaceViewManager = SurfaceViewManager.getInstance()
-        // val viewModel: NaviViewModel? = Reflect.on(surfaceViewManager).field("mLeftMapCardView").get("mViewModel")
-        XposedBridge.log("initNaviLaneInfoView: $viewModel")
-        XposedBridge.log("initNaviLaneInfoView: $mLifecycleOwner")
-
         if (viewModel == null) {
             return
         }
@@ -109,7 +104,6 @@ class MapFullFragment : BaseFragment() {
         }
 
         viewModel.naviLaneBgLiveData.observe(mLifecycleOwner) {
-            this.mNaviLaneInfoView.updateLaneBg(it)
             this.mNaviLaneInfoView.setBackgroundResource(R.drawable.fragment_map_navi_bg_lane)
         }
         viewModel.naviTollGateLaneData.observe(mLifecycleOwner) { list ->
@@ -137,13 +131,12 @@ class MapFullFragment : BaseFragment() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        val isisThemeChanged = ThemeManager.isThemeChanged(newConfig)
-        XposedBridge.log("onConfigurationChanged: $isisThemeChanged")
-
-        if (isisThemeChanged) {
-            // val isNightMode: Boolean = ThemeManager.isNightMode(requireContext())
-            mTopMaskImageView.setBackgroundResource(R.drawable.fragment_map_top_mask)
-        }
+        // val isisThemeChanged = ThemeManager.isThemeChanged(newConfig)
+        // XposedBridge.log("onConfigurationChanged: $isisThemeChanged")
+        // if (isisThemeChanged) {
+        //     // val isNightMode: Boolean = ThemeManager.isNightMode(requireContext())
+        //     mTopMaskImageView.setBackgroundResource(R.drawable.fragment_map_top_mask)
+        // }
     }
 
     override fun onHiddenChanged(hidden: Boolean) {

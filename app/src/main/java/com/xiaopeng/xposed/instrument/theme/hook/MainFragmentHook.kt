@@ -27,52 +27,38 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-        XposedHelpers.findAndHookMethod(MainFragment::class.java, "onPause", mXCMethodOnPause)
-        XposedHelpers.findAndHookMethod(MainFragment::class.java, "onResume", mXCMethodOnResume)
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onHiddenChanged", Boolean::class.java, mXCMethodOnHiddenChanged)
 
         // @formatter:off
-        XposedBridge.hookAllMethods(MainFragment::class.java, "updateLeftListData"          , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "updateRightListData"         , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "updateLeftListHighPosition"  , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "updateRightListHighPosition" , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "showRightListView"           , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftListView"            , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftCardView"            , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "showRightCardView"           , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftSubCardView"         , mXCMethodOnHiddenSkipMethod)
-        XposedBridge.hookAllMethods(MainFragment::class.java, "showSubRightCardView"        , mXCMethodOnHiddenSkipMethod)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateLeftListData"          , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateRightListData"         , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateLeftListHighPosition"  , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateRightListHighPosition" , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showRightListView"           , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftListView"            , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftCardView"            , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showRightCardView"           , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftSubCardView"         , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showSubRightCardView"        , mXCMethodSkipMethodOnFragmentHidden)
         // @formatter:on
-    }
-
-    private val mXCMethodOnPause: XC_MethodHook = object : XCMethodHookCatching() {
-        override fun afterHookedMethodCatching(param: MethodHookParam) {
-            XposedBridge.log("MainFragmentHook.onPause")
-        }
-    }
-
-    private val mXCMethodOnResume: XC_MethodHook = object : XCMethodHookCatching() {
-        override fun afterHookedMethodCatching(param: MethodHookParam) {
-            XposedBridge.log("MainFragmentHook.onResume")
-        }
     }
 
     private val mXCMethodOnHiddenChanged: XC_MethodHook = object : XCMethodHookCatching() {
         override fun afterHookedMethodCatching(param: MethodHookParam) {
             val isHidden = param.args[0] as Boolean
-            XposedBridge.log("MainFragmentHook.onHiddenChanged isHidden=${isHidden}")
+            // XposedBridge.log("MainFragmentHook.onHiddenChanged isHidden=${isHidden}")
             if (isHidden.not()) {
                 SurfaceViewManager.getInstance().resumeMainMap()
             }
         }
     }
 
-    private val mXCMethodOnHiddenSkipMethod: XC_MethodHook = object : XCMethodHookCatching() {
+    private val mXCMethodSkipMethodOnFragmentHidden: XC_MethodHook = object : XCMethodHookCatching() {
         override fun beforeHookedMethodCatching(param: MethodHookParam) {
             super.beforeHookedMethodCatching(param)
             val fragment = param.thisObject as MainFragment
 
-            XposedBridge.log("MainFragmentHook.${param.method.name}, isHidden=${fragment.isHidden}")
+            // XposedBridge.log("MainFragmentHook.${param.method.name}, isHidden=${fragment.isHidden}")
             if (fragment.isHidden) {
                 param.result = null
             }

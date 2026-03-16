@@ -97,7 +97,6 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             super.afterHookedMethodCatching(param)
             val activity: MainActivity = param.thisObject as MainActivity
             val value: Int = param.args[0] as Int
-            XposedBridge.log("MainActivityHook:XCMethodUpdateAirVolume value=${value}")
             when (value) {
                 1 -> showMapFullFragment(activity)
                 2 -> hideMapFullFragment(activity)
