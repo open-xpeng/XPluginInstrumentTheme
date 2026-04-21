@@ -4,9 +4,9 @@
 
 ## 预览
 
-![白天预览效果图](docs/photo_2026-03-16_01-10-51.jpg)
+![白天预览效果图](./docs/photo_2026-03-16_01-10-51.jpg)
 
-![白天预览效果图](docs/photo_2026-03-16_01-09-29.jpg)
+![白天预览效果图](./docs/photo_2026-03-16_01-09-29.jpg)
 
 ## 安装说明
 
@@ -35,6 +35,31 @@
 ```shell
 ps -elf | grep -w 'com.xiaopeng.instrument' | grep -v 'grep' | awk '{print $2}' | xargs kill -9
 ps -elf | grep -w 'com.xiaopeng.montecarlo' | grep -v 'grep' | awk '{print $2}' | xargs kill -9
+```
+
+### Codex + JADX MCP
+
+启动 JADX MCP Server：
+
+```powershell
+uv --directory "D:\Tools\jadx-mcp-server" run jadx_mcp_server.py --http
+```
+
+启动 Codex 时可临时启用：
+
+```powershell
+codex -c 'mcp_servers.jadx.enabled=true' --yolo
+```
+
+如果需要写入 Codex 配置，可使用以下片段：
+
+```toml
+[mcp_servers.jadx]
+type = "steamable-http"
+startupTimeout = 30000
+toolTimeout = 300000
+url = "http://127.0.0.1:8651/mcp"
+enabled = false
 ```
 
 ## 版权
