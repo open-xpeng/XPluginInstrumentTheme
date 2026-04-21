@@ -1,9 +1,9 @@
 [versions]
-agp        = "9.1.0"
-kotlin     = "2.3.20-RC3"
+agp        = "9.1.1"
+kotlin     = "2.3.20"
 sdkMin     = "24"
-sdkCompile = "36"
-sdkTarget  = "36"
+sdkCompile = "37"
+sdkTarget  = "37"
 
 [libraries]
 androidx-core-ktx   = "androidx.core:core-ktx:1.17.0"
@@ -21,7 +21,7 @@ slf4j-logback   = 'com.github.tony19:logback-android:3.0.0'
 # commons
 #
 common-gson      = 'com.google.code.gson:gson:2.13.2'
-common-guava     = 'com.google.guava:guava:33.5.0-android'
+common-guava     = 'com.google.guava:guava:33.6.0-android'
 common-joor      = 'org.jooq:joor-java-8:0.9.15'                                # https://github.com/jOOQ/jOOR
 common-xposed    = 'de.robv.android.xposed:api:82'                              # https://mvnrepository.com/artifact/de.robv.android.xposed/api
 common-framework = 'com.rover12421.android.hide:framework:10.0.0_r2'            # https://github.com/rover12421/AndroidHideApi | https://mvnrepository.com/artifact/com.rover12421.android.hide/framework
