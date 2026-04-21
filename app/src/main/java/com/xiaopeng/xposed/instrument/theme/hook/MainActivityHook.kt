@@ -17,10 +17,12 @@
 package com.xiaopeng.xposed.instrument.theme.hook
 
 import android.os.Bundle
+import android.view.Surface
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.xiaopeng.instrument.bean.GearType
+import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.MainActivity
 import com.xiaopeng.instrument.view.MainFragment
 import com.xiaopeng.instrument.viewmodel.InfoViewModel
@@ -29,7 +31,6 @@ import com.xiaopeng.xposed.instrument.theme.extensions.getResourceId
 import com.xiaopeng.xposed.instrument.theme.fragments.MapFullFragment
 import com.xiaopeng.xposed.instrument.theme.utils.XCMethodHookCatching
 import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import org.joor.Reflect
@@ -37,6 +38,7 @@ import org.joor.Reflect
 object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
     private val mFragmentTag: String = MapFullFragment::class.java.name
+    private const val NAVI_SR_FRAGMENT_NAME: String = "com.xiaopeng.instrument.view.NaviSRFragment"
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         // @formatter:off
@@ -64,6 +66,27 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
             showMapFullFragment(activity = activity)
             param.result = null
+        }
+
+        override fun afterHookedMethodCatching(param: MethodHookParam) {
+            super.afterHookedMethodCatching(param)
+
+            val targetFragmentClass = param.args[0] as Class<*>
+            if (targetFragmentClass.name != NAVI_SR_FRAGMENT_NAME) {
+                return
+            }
+
+            val activity = param.thisObject as MainActivity
+            val fragment = activity.supportFragmentManager.findFragmentByTag(NAVI_SR_FRAGMENT_NAME) ?: return
+            val srSurfaceView = XposedHelpers.getObjectField(fragment, "mSrSurfaceView") ?: return
+            val srSurface = XposedHelpers.callMethod(srSurfaceView, "getSurface") as? Surface ?: return
+
+            if (fragment.isHidden) {
+                return
+            }
+
+            SurfaceViewManager.getInstance().srSurface = srSurface
+            SurfaceViewManager.getInstance().startSRChangeService()
         }
     }
 
