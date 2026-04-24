@@ -27,6 +27,10 @@ public class NaviViewModel extends ViewModel {
         throw new RuntimeException("Stub!");
     }
 
+    public MutableLiveData<Boolean> getNaviGuidenceVisibility() {
+        throw new RuntimeException("Stub!");
+    }
+
     public MutableLiveData<Boolean> getNaviLaneBgLiveData() {
         throw new RuntimeException("Stub!");
     }

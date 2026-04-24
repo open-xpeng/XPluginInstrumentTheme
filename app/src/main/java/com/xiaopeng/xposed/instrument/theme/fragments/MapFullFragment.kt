@@ -46,6 +46,7 @@ import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardAutoSwitch
+import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardNavigationActivity
 import com.xiaopeng.xui.widget.XImageView
 import de.robv.android.xposed.XposedBridge
 
@@ -54,6 +55,8 @@ class MapFullFragment : BaseFragment() {
     private val mInfoViewModel: SRInfoViewModel by lazy { ViewModelProvider(requireActivity())[SRInfoViewModel::class.java] }
     private val mNaviViewModel: SRNaviViewModel by lazy { ViewModelProvider(requireActivity())[SRNaviViewModel::class.java] }
     private var mRawLeftSubCardIndex: Int? = null
+    private var mIsTurnGuidanceVisible: Boolean = false
+    private var mIsTbtVisible: Boolean = false
     private var mIsNavigationActive: Boolean = false
 
     // @formatter:off
@@ -136,13 +139,41 @@ class MapFullFragment : BaseFragment() {
     }
 
     private fun initLeftSubCardAutoSwitch() {
+        val naviGuidenceVisibility = mNaviViewModel.getNaviGuidenceVisibility()
         val naviTBtVisibility = mNaviViewModel.getNaviTBtVisibility()
-        mIsNavigationActive = naviTBtVisibility.value == true
-        setLiveDataObserver(naviTBtVisibility, observer<Boolean> { isNavigationActive ->
-            mIsNavigationActive = isNavigationActive
+        mIsTurnGuidanceVisible = naviGuidenceVisibility.value == true
+        mIsTbtVisible = naviTBtVisibility.value == true
+        mIsNavigationActive = resolveNavigationCardActive()
+
+        setLiveDataObserver(naviGuidenceVisibility, observer<Boolean> { isTurnGuidanceVisible ->
+            mIsTurnGuidanceVisible = isTurnGuidanceVisible
+            if (!updateNavigationCardState()) {
+                return@observer
+            }
             val rawCardIndex = mRawLeftSubCardIndex ?: return@observer
             renderLeftSubCard(rawCardIndex = rawCardIndex)
         })
+        setLiveDataObserver(naviTBtVisibility, observer<Boolean> { isTbtVisible ->
+            mIsTbtVisible = isTbtVisible
+            if (!updateNavigationCardState()) {
+                return@observer
+            }
+            val rawCardIndex = mRawLeftSubCardIndex ?: return@observer
+            renderLeftSubCard(rawCardIndex = rawCardIndex)
+        })
+    }
+
+    private fun resolveNavigationCardActive(): Boolean {
+        return LeftSubCardNavigationActivity.isNavigationCardActive(
+            isTurnGuidanceVisible = mIsTurnGuidanceVisible,
+            isTbtVisible = mIsTbtVisible,
+        )
+    }
+
+    private fun updateNavigationCardState(): Boolean {
+        val previous = mIsNavigationActive
+        mIsNavigationActive = resolveNavigationCardActive()
+        return previous != mIsNavigationActive
     }
 
     private fun renderLeftSubCard(rawCardIndex: Int) {
