@@ -26,6 +26,8 @@ import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.MainActivity
 import com.xiaopeng.instrument.view.MainFragment
 import com.xiaopeng.instrument.viewmodel.InfoViewModel
+import com.xiaopeng.instrument.viewmodel.sr.SRNaviViewModel
+import com.xiaopeng.instrument.viewmodel.sr.SRInfoViewModel
 import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.extensions.getResourceId
 import com.xiaopeng.xposed.instrument.theme.fragments.MapFullFragment
@@ -96,6 +98,8 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
             val activity: MainActivity = param.thisObject as MainActivity
             val infoViewModel = ViewModelProvider(owner = activity)[InfoViewModel::class.java]
+            ViewModelProvider(owner = activity)[SRInfoViewModel::class.java]
+            ViewModelProvider(owner = activity)[SRNaviViewModel::class.java]
 
             // 添加模块资源
             XposedHelpers.callMethod(/* obj = */ activity.getResources().assets, /* methodName = */ "addAssetPath", /* ...args = */ XposedMan.MODULE_PATH);

@@ -23,6 +23,10 @@ import java.util.List;
 
 public class NaviViewModel extends ViewModel {
 
+    public MutableLiveData<Boolean> getNaviTBtVisibility() {
+        throw new RuntimeException("Stub!");
+    }
+
     public MutableLiveData<Boolean> getNaviLaneBgLiveData() {
         throw new RuntimeException("Stub!");
     }

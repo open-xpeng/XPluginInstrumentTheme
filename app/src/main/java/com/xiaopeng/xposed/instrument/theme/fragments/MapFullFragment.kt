@@ -34,6 +34,7 @@ import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.BaseFragment
 import com.xiaopeng.instrument.viewmodel.NaviViewModel
 import com.xiaopeng.instrument.viewmodel.sr.SRInfoViewModel
+import com.xiaopeng.instrument.viewmodel.sr.SRNaviViewModel
 import com.xiaopeng.instrument.widget.CardMapSurfaceView
 import com.xiaopeng.instrument.widget.NaviLaneInfoView
 import com.xiaopeng.instrument.widget.sr.SRLeftInfoViewGroup
@@ -44,12 +45,16 @@ import com.xiaopeng.xposed.instrument.theme.R
 import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
+import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardAutoSwitch
 import com.xiaopeng.xui.widget.XImageView
 import de.robv.android.xposed.XposedBridge
 
 class MapFullFragment : BaseFragment() {
 
     private val mInfoViewModel: SRInfoViewModel by lazy { ViewModelProvider(requireActivity())[SRInfoViewModel::class.java] }
+    private val mNaviViewModel: SRNaviViewModel by lazy { ViewModelProvider(requireActivity())[SRNaviViewModel::class.java] }
+    private var mRawLeftSubCardIndex: Int? = null
+    private var mIsNavigationActive: Boolean = false
 
     // @formatter:off
     private val mWidgetMapHeight: Int by lazy { ConstantSurfaceViewManager.SR_MAP_HEIGHT }
@@ -74,6 +79,7 @@ class MapFullFragment : BaseFragment() {
         super.onViewCreated(view, bundle)
 
         initNaviLaneInfoView()
+        initLeftSubCardAutoSwitch()
         initObservers()
 
         this.mNaviLaneInfoView.setBackgroundResource(R.drawable.fragment_map_navi_bg_lane)
@@ -116,7 +122,7 @@ class MapFullFragment : BaseFragment() {
 
     private fun initObservers() {
         // @formatter:off
-        setLiveDataObserver(this.mInfoViewModel.leftSubCardLiveData   , observer { this.mLeftInfoViewGroup .showSubCardView(it)      })
+        setLiveDataObserver(this.mInfoViewModel.leftSubCardLiveData   , observer { renderLeftSubCard(rawCardIndex = it)             })
         setLiveDataObserver(this.mInfoViewModel.rightSubCardLiveData  , observer { this.mRightInfoViewGroup.showSubCardView(it)      })
         setLiveDataObserver(this.mInfoViewModel.leftCardLiveData      , observer { this.mLeftInfoViewGroup .showCardView(it)         })
         setLiveDataObserver(this.mInfoViewModel.rightCardLiveData     , observer { this.mRightInfoViewGroup.showCardView(it)         })
@@ -127,6 +133,22 @@ class MapFullFragment : BaseFragment() {
         setLiveDataObserver(this.mInfoViewModel.rightListLiveData     , observer { this.mRightInfoViewGroup.updateListData(it)       })
         setLiveDataObserver(this.mInfoViewModel.rightListInfoLiveData , observer { this.mRightInfoViewGroup.showList(it)             })
         // @formatter:on
+    }
+
+    private fun initLeftSubCardAutoSwitch() {
+        val naviTBtVisibility = mNaviViewModel.getNaviTBtVisibility()
+        mIsNavigationActive = naviTBtVisibility.value == true
+        setLiveDataObserver(naviTBtVisibility, observer<Boolean> { isNavigationActive ->
+            mIsNavigationActive = isNavigationActive
+            val rawCardIndex = mRawLeftSubCardIndex ?: return@observer
+            renderLeftSubCard(rawCardIndex = rawCardIndex)
+        })
+    }
+
+    private fun renderLeftSubCard(rawCardIndex: Int) {
+        mRawLeftSubCardIndex = rawCardIndex
+        val effectiveCardIndex = LeftSubCardAutoSwitch.resolve(rawCardIndex = rawCardIndex, isNavigationActive = mIsNavigationActive)
+        mLeftInfoViewGroup.showSubCardView(effectiveCardIndex)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -169,9 +191,6 @@ class MapFullFragment : BaseFragment() {
     private fun <T> observer(block: (value: T) -> Unit): Observer<T> {
         return object : Observer<T> {
             override fun onChanged(value: T) {
-                if (isHidden) {
-                    return
-                }
                 block(value)
             }
         }
