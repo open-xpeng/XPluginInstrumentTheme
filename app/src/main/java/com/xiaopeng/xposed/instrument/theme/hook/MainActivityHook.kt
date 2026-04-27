@@ -46,7 +46,6 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         // @formatter:off
         XposedHelpers.findAndHookMethod(MainActivity::class.java, "onCreate"           , Bundle::class.java, mXCMethodOnViewCreated       )
         XposedHelpers.findAndHookMethod(MainActivity::class.java, "showFragmentByClass", Class::class.java , mXCMethodShowFragmentByClass )
-        XposedHelpers.findAndHookMethod(MainActivity::class.java, "updateAirVolume"    , Int::class.java   , mXCMethodUpdateAirVolume     )
         // @formatter:on
     }
 
@@ -117,18 +116,6 @@ object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             }
         }
 
-    }
-
-    private val mXCMethodUpdateAirVolume: XC_MethodHook = object : XCMethodHookCatching() {
-        override fun afterHookedMethodCatching(param: MethodHookParam) {
-            super.afterHookedMethodCatching(param)
-            val activity: MainActivity = param.thisObject as MainActivity
-            val value: Int = param.args[0] as Int
-            when (value) {
-                1 -> showMapFullFragment(activity)
-                2 -> hideMapFullFragment(activity)
-            }
-        }
     }
 
     private fun showMapFullFragment(activity: MainActivity) {
