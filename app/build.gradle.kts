@@ -98,6 +98,7 @@ kotlin {
 
 dependencies {
     implementation(libs.common.joor)
+    testImplementation("junit:junit:4.13.2")
 
     compileOnly(project(":stub"))
     compileOnly(libs.androidx.core.ktx)
