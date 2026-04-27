@@ -6,10 +6,11 @@ sdkCompile = "37"
 sdkTarget  = "37"
 
 [libraries]
-androidx-core-ktx   = "androidx.core:core-ktx:1.17.0"
-androidx-appcompat  = "androidx.appcompat:appcompat:1.7.1"
-androidx-material   = "com.google.android.material:material:1.13.0"
-androidx-constraint = "androidx.constraintlayout:constraintlayout:2.2.1"
+androidx-core-ktx    = "androidx.core:core-ktx:1.17.0"
+androidx-appcompat   = "androidx.appcompat:appcompat:1.7.1"
+androidx-material    = "com.google.android.material:material:1.13.0"
+androidx-constraint  = "androidx.constraintlayout:constraintlayout:2.2.1"
+androidx-recyclerview = "androidx.recyclerview:recyclerview:1.4.0"
 
 #
 # slf4j

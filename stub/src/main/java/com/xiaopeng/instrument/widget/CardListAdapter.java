@@ -20,9 +20,10 @@ import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.android.internal.widget.RecyclerView;
 import com.xiaopeng.instrument.bean.InfoBean;
 import com.xiaopeng.xui.widget.XRecyclerView;
+
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 

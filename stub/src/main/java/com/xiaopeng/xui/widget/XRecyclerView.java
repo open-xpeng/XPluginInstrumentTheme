@@ -19,7 +19,7 @@ package com.xiaopeng.xui.widget;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import com.android.internal.widget.RecyclerView;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class XRecyclerView extends RecyclerView {
     public XRecyclerView(Context context) {

@@ -19,8 +19,9 @@ package com.xiaopeng.instrument.widget;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import com.android.internal.widget.LinearLayoutManager;
 import com.xiaopeng.xui.widget.XRecyclerView;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 public class CardPickerLayoutManager extends LinearLayoutManager {
     public CardPickerLayoutManager(Context context) {

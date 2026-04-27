@@ -104,6 +104,7 @@ dependencies {
     compileOnly(libs.androidx.core.ktx)
     compileOnly(libs.androidx.appcompat)
     compileOnly(libs.androidx.constraint)
+    compileOnly(libs.androidx.recyclerview)
 
     compileOnly(libs.xpeng.car)
     compileOnly(libs.xpeng.xui)
