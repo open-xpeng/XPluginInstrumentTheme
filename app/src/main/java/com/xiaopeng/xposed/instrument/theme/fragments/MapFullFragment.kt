@@ -46,7 +46,6 @@ import com.xiaopeng.xposed.instrument.theme.XposedMan
 import com.xiaopeng.xposed.instrument.theme.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardAutoSwitch
-import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardNavigationActivity
 import com.xiaopeng.xui.widget.XImageView
 import de.robv.android.xposed.XposedBridge
 
@@ -145,26 +144,16 @@ class MapFullFragment : BaseFragment() {
         mIsTbtVisible = naviTBtVisibility.value == true
         mIsNavigationActive = resolveNavigationCardActive()
 
-        setLiveDataObserver(naviGuidenceVisibility, observer<Boolean> { isTurnGuidanceVisible ->
+        setLiveDataObserver(naviGuidenceVisibility, navigationObserver { isTurnGuidanceVisible ->
             mIsTurnGuidanceVisible = isTurnGuidanceVisible
-            if (!updateNavigationCardState()) {
-                return@observer
-            }
-            val rawCardIndex = mRawLeftSubCardIndex ?: return@observer
-            renderLeftSubCard(rawCardIndex = rawCardIndex)
         })
-        setLiveDataObserver(naviTBtVisibility, observer<Boolean> { isTbtVisible ->
+        setLiveDataObserver(naviTBtVisibility, navigationObserver { isTbtVisible ->
             mIsTbtVisible = isTbtVisible
-            if (!updateNavigationCardState()) {
-                return@observer
-            }
-            val rawCardIndex = mRawLeftSubCardIndex ?: return@observer
-            renderLeftSubCard(rawCardIndex = rawCardIndex)
         })
     }
 
     private fun resolveNavigationCardActive(): Boolean {
-        return LeftSubCardNavigationActivity.isNavigationCardActive(
+        return LeftSubCardAutoSwitch.isNavigationActive(
             isTurnGuidanceVisible = mIsTurnGuidanceVisible,
             isTbtVisible = mIsTbtVisible,
         )
@@ -194,10 +183,16 @@ class MapFullFragment : BaseFragment() {
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
-        if (hidden.not()) {
-            SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
-            startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
+        if (hidden) {
+            return
         }
+
+        val rawCardIndex = mRawLeftSubCardIndex
+        if (rawCardIndex != null) {
+            renderLeftSubCard(rawCardIndex = rawCardIndex)
+        }
+        SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
+        startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
     }
 
     private fun startChangeService(width: Int, height: Int, surface: Surface) {
@@ -222,7 +217,27 @@ class MapFullFragment : BaseFragment() {
     private fun <T> observer(block: (value: T) -> Unit): Observer<T> {
         return object : Observer<T> {
             override fun onChanged(value: T) {
+                if (isHidden) {
+                    return
+                }
                 block(value)
+            }
+        }
+    }
+
+    private fun navigationObserver(block: (value: Boolean) -> Unit): Observer<Boolean> {
+        return object : Observer<Boolean> {
+            override fun onChanged(value: Boolean) {
+                block(value)
+                if (!updateNavigationCardState()) {
+                    return
+                }
+                if (isHidden) {
+                    return
+                }
+
+                val rawCardIndex = mRawLeftSubCardIndex ?: return
+                renderLeftSubCard(rawCardIndex = rawCardIndex)
             }
         }
     }

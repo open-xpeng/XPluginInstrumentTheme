@@ -24,9 +24,9 @@ import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.MainFragment
 import com.xiaopeng.instrument.viewmodel.NaviViewModel
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardAutoSwitch
-import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardNavigationActivity
 import com.xiaopeng.xposed.instrument.theme.utils.XCMethodHookCatching
 import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
@@ -41,6 +41,18 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onViewCreated", View::class.java, Bundle::class.java, mXCMethodOnViewCreated)
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onHiddenChanged", Boolean::class.java, mXCMethodOnHiddenChanged)
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "showLeftSubCardView", Int::class.javaPrimitiveType, mXCMethodShowLeftSubCardView)
+
+        // @formatter:off
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateLeftListData"          , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateRightListData"         , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateLeftListHighPosition"  , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "updateRightListHighPosition" , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showRightListView"           , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftListView"            , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showLeftCardView"            , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showRightCardView"           , mXCMethodSkipMethodOnFragmentHidden)
+        XposedBridge.hookAllMethods(MainFragment::class.java, "showSubRightCardView"        , mXCMethodSkipMethodOnFragmentHidden)
+        // @formatter:on
     }
 
     private val mXCMethodOnViewCreated: XC_MethodHook = object : XCMethodHookCatching() {
@@ -94,11 +106,22 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         }
     }
 
+    private val mXCMethodSkipMethodOnFragmentHidden: XC_MethodHook = object : XCMethodHookCatching() {
+        override fun beforeHookedMethodCatching(param: MethodHookParam) {
+            super.beforeHookedMethodCatching(param)
+
+            val fragment = param.thisObject as MainFragment
+            if (fragment.isHidden) {
+                param.result = null
+            }
+        }
+    }
+
     private fun updateNavigationCardState(fragment: MainFragment): Boolean {
         val previous = XposedHelpers.getAdditionalInstanceField(fragment, KEY_NAV_ACTIVE) as? Boolean
         val isTurnGuidanceVisible = XposedHelpers.getAdditionalInstanceField(fragment, KEY_TURN_GUIDANCE_VISIBLE) as? Boolean ?: false
         val isTbtVisible = XposedHelpers.getAdditionalInstanceField(fragment, KEY_TBT_VISIBLE) as? Boolean ?: false
-        val isNavigationActive = LeftSubCardNavigationActivity.isNavigationCardActive(
+        val isNavigationActive = LeftSubCardAutoSwitch.isNavigationActive(
             isTurnGuidanceVisible = isTurnGuidanceVisible,
             isTbtVisible = isTbtVisible,
         )

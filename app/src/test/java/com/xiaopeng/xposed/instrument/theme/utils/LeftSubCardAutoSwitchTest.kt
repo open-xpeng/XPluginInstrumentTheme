@@ -20,4 +20,33 @@ class LeftSubCardAutoSwitchTest {
     fun `keeps navigation card when navigation is active`() {
         assertEquals(0, LeftSubCardAutoSwitch.resolve(rawCardIndex = 0, isNavigationActive = true))
     }
+
+    @Test
+    fun `tbt only does not activate navigation card`() {
+        assertEquals(
+            false,
+            LeftSubCardAutoSwitch.isNavigationActive(
+                isTurnGuidanceVisible = false,
+                isTbtVisible = true,
+            )
+        )
+    }
+
+    @Test
+    fun `turn guidance activates navigation card regardless of tbt visibility`() {
+        assertEquals(
+            true,
+            LeftSubCardAutoSwitch.isNavigationActive(
+                isTurnGuidanceVisible = true,
+                isTbtVisible = false,
+            )
+        )
+        assertEquals(
+            true,
+            LeftSubCardAutoSwitch.isNavigationActive(
+                isTurnGuidanceVisible = true,
+                isTbtVisible = true,
+            )
+        )
+    }
 }
