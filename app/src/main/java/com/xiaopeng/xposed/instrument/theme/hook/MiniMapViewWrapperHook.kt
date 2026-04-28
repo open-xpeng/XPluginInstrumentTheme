@@ -18,19 +18,53 @@ package com.xiaopeng.xposed.instrument.theme.hook
 
 import com.xiaopeng.xposed.instrument.theme.utils.XCMethodHookCatching
 import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
 object MiniMapViewWrapperHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-        XposedHelpers.findAndHookMethod(
-            /* className    = */ "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
-            /* classLoader  = */ loadPackageParam.classLoader,
-            /* methodName   = */ "getDefaultMapViewTop",
-            /* ...parameterTypesAndCallback = */ mXCMethodGetDefaultMapViewTop
-        )
+
+        try {
+            XposedHelpers.findAndHookMethod(
+                /* className    = */ "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
+                /* classLoader  = */ loadPackageParam.classLoader,
+                /* methodName   = */ "getDefaultMapViewTop",
+                /* ...parameterTypesAndCallback = */ mXCMethodGetDefaultMapViewTop
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
+
+        try {
+            mMiniMapViewWrapperClass = XposedHelpers.findClass(
+                "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
+                loadPackageParam.classLoader
+            )
+            XposedHelpers.findAndHookMethod(
+                /* className    = */ "com.xiaopeng.montecarlo.dynamiclevel.base.DynamicLevelHelper",
+                /* classLoader  = */ loadPackageParam.classLoader,
+                /* methodName   = */ "enableDynamicLevel",
+                /* ...parameterTypesAndCallback = */ mXCMethodEnableDynamicLevel
+            )
+            XposedHelpers.findAndHookMethod(
+                /* className    = */ "com.xiaopeng.montecarlo.navcore.mapdisplay.MapViewWrapper",
+                /* classLoader  = */ loadPackageParam.classLoader,
+                /* methodName   = */ "setMapLevel",
+                /* ...parameterTypesAndCallback = */ Float::class.javaPrimitiveType!!,
+                mXCMethodSetMapLevel
+            )
+        } catch (t: Throwable) {
+            XposedBridge.log(t)
+        }
     }
+
+    private const val MAP_LEVEL_OFFSET = 1.5f
+    private const val MAX_MAP_LEVEL = 19.0f
+    private const val KEY_RAW_MAP_LEVEL = "xpit_raw_map_level"
+
+    private var mMiniMapViewWrapperClass: Class<*>? = null
 
     private val mXCMethodGetDefaultMapViewTop: XC_MethodHook = object : XCMethodHookCatching() {
         override fun afterHookedMethodCatching(param: MethodHookParam) {
@@ -40,6 +74,42 @@ object MiniMapViewWrapperHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
                 396  -> 560 /* 全屏卡牌偏移量 600指往下偏移 */
                 else -> param.result
             }
+        }
+    }
+
+    private val mXCMethodSetMapLevel: XC_MethodHook = object : XCMethodHookCatching() {
+        override fun beforeHookedMethodCatching(param: MethodHookParam) {
+            super.beforeHookedMethodCatching(param)
+
+            val miniMapViewWrapperClass = mMiniMapViewWrapperClass ?: return
+            val thisObject = param.thisObject ?: return
+            if (!miniMapViewWrapperClass.isInstance(thisObject)) {
+                return
+            }
+
+            val level = param.args[0] as? Float ?: return
+            XposedHelpers.setAdditionalInstanceField(thisObject, KEY_RAW_MAP_LEVEL, level)
+            val adjustedLevel = level + MAP_LEVEL_OFFSET
+            param.args[0] = if (adjustedLevel > MAX_MAP_LEVEL) {
+                MAX_MAP_LEVEL
+            } else {
+                adjustedLevel
+            }
+        }
+    }
+
+    private val mXCMethodEnableDynamicLevel: XC_MethodHook = object : XCMethodHookCatching() {
+        override fun afterHookedMethodCatching(param: MethodHookParam) {
+            super.afterHookedMethodCatching(param)
+
+            val miniMapViewWrapperClass = mMiniMapViewWrapperClass ?: return
+            val mapViewWrapper = XposedHelpers.getObjectField(param.thisObject, "mMapViewWrapper") ?: return
+            if (!miniMapViewWrapperClass.isInstance(mapViewWrapper)) {
+                return
+            }
+
+            val level = XposedHelpers.getAdditionalInstanceField(mapViewWrapper, KEY_RAW_MAP_LEVEL) as? Float ?: return
+            XposedHelpers.setFloatField(param.thisObject, "mPreLevel", level)
         }
     }
 }
