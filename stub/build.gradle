@@ -17,16 +17,16 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace 'com.xiaopeng.xposed.stub'
+    namespace = 'com.xiaopeng.xposed.stub'
     compileSdk libs.versions.sdkCompile.get().toInteger()
 
     defaultConfig {
         minSdk libs.versions.sdkMin.get().toInteger()
     }
     buildFeatures {
-        aidl false
-        buildConfig false
-        dataBinding false
+        aidl = false
+        buildConfig = false
+        dataBinding = false
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

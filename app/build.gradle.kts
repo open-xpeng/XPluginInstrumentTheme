@@ -50,8 +50,8 @@ android {
         resources.excludes.add("META-INF/com/android/**")
         resources.excludes.add("META-INF/version-control-info.textproto")
     }
-    aaptOptions {
-        additionalParameters("--allow-reserved-package-id", "--package-id", "0x66")
+    androidResources {
+        additionalParameters += listOf("--allow-reserved-package-id", "--package-id", "0x66")
     }
     signingConfigs {
         getByName("debug") {
