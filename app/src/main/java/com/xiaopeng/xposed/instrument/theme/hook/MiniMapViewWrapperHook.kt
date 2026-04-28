@@ -26,16 +26,7 @@ object MiniMapViewWrapperHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
 
-        try {
-            XposedHelpers.findAndHookMethod(
-                /* className    = */ "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
-                /* classLoader  = */ loadPackageParam.classLoader,
-                /* methodName   = */ "getDefaultMapViewTop",
-                /* ...parameterTypesAndCallback = */ mXCMethodGetDefaultMapViewTop
-            )
-        } catch (t: Throwable) {
-            XposedBridge.log(t)
-        }
+        MiniMapViewCenterHook(loadPackageParam = loadPackageParam)
 
         try {
             mMiniMapViewWrapperClass = XposedHelpers.findClass(
@@ -65,17 +56,6 @@ object MiniMapViewWrapperHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
     private const val KEY_RAW_MAP_LEVEL = "xpit_raw_map_level"
 
     private var mMiniMapViewWrapperClass: Class<*>? = null
-
-    private val mXCMethodGetDefaultMapViewTop: XC_MethodHook = object : XCMethodHookCatching() {
-        override fun afterHookedMethodCatching(param: MethodHookParam) {
-            super.afterHookedMethodCatching(param)
-            param.result = when (param.result) {
-                363  -> 363 /* 正常卡牌偏移量 */
-                396  -> 560 /* 全屏卡牌偏移量 600指往下偏移 */
-                else -> param.result
-            }
-        }
-    }
 
     private val mXCMethodSetMapLevel: XC_MethodHook = object : XCMethodHookCatching() {
         override fun beforeHookedMethodCatching(param: MethodHookParam) {
