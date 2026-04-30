@@ -39,6 +39,7 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onViewCreated", View::class.java, Bundle::class.java, mXCMethodOnViewCreated)
+        XposedHelpers.findAndHookMethod(MainFragment::class.java, "onResume", mXCMethodOnResume)
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onHiddenChanged", Boolean::class.java, mXCMethodOnHiddenChanged)
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "showLeftSubCardView", Int::class.javaPrimitiveType, mXCMethodShowLeftSubCardView)
 
@@ -74,6 +75,16 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         }
     }
 
+    private val mXCMethodOnResume: XC_MethodHook = object : XCMethodHookCatching() {
+        override fun beforeHookedMethodCatching(param: MethodHookParam) {
+            val fragment = param.thisObject as MainFragment
+            if (fragment.isHidden) {
+                return
+            }
+            syncLeftMapSurfaceType(fragment = fragment)
+        }
+    }
+
     private val mXCMethodOnHiddenChanged: XC_MethodHook = object : XCMethodHookCatching() {
         override fun afterHookedMethodCatching(param: MethodHookParam) {
             val fragment = param.thisObject as MainFragment
@@ -102,7 +113,9 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             }
 
             val isNavigationActive = XposedHelpers.getAdditionalInstanceField(fragment, KEY_NAV_ACTIVE) as? Boolean ?: false
-            param.args[0] = LeftSubCardAutoSwitch.resolve(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+            val effectiveCardIndex = LeftSubCardAutoSwitch.resolve(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+            syncLeftMapSurfaceType(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+            param.args[0] = effectiveCardIndex
         }
     }
 
@@ -127,6 +140,20 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         )
         XposedHelpers.setAdditionalInstanceField(fragment, KEY_NAV_ACTIVE, isNavigationActive)
         return previous != isNavigationActive
+    }
+
+    private fun syncLeftMapSurfaceType(fragment: MainFragment) {
+        val rawCardIndex = XposedHelpers.getAdditionalInstanceField(fragment, KEY_RAW_LEFT_SUB_CARD) as? Int ?: return
+        val isNavigationActive = XposedHelpers.getAdditionalInstanceField(fragment, KEY_NAV_ACTIVE) as? Boolean ?: false
+        syncLeftMapSurfaceType(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+    }
+
+    private fun syncLeftMapSurfaceType(rawCardIndex: Int, isNavigationActive: Boolean) {
+        val leftMapSurfaceType = LeftSubCardAutoSwitch.resolveLeftMapSurfaceType(
+            rawCardIndex = rawCardIndex,
+            isNavigationActive = isNavigationActive,
+        )
+        SurfaceViewManager.getInstance().setLeftViewType(leftMapSurfaceType)
     }
 
     private class OnNavigationSignalChanged(

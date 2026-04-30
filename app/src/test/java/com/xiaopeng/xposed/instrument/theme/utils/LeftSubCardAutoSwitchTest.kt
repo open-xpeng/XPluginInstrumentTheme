@@ -22,6 +22,46 @@ class LeftSubCardAutoSwitchTest {
     }
 
     @Test
+    fun `disables left map surface when navigation card is switched to media`() {
+        assertEquals(
+            0,
+            LeftSubCardAutoSwitch.resolveLeftMapSurfaceType(
+                rawCardIndex = 0,
+                isNavigationActive = false,
+            )
+        )
+    }
+
+    @Test
+    fun `enables left map surface when navigation card remains active`() {
+        assertEquals(
+            2,
+            LeftSubCardAutoSwitch.resolveLeftMapSurfaceType(
+                rawCardIndex = 0,
+                isNavigationActive = true,
+            )
+        )
+    }
+
+    @Test
+    fun `disables left map surface for non-navigation cards`() {
+        assertEquals(
+            0,
+            LeftSubCardAutoSwitch.resolveLeftMapSurfaceType(
+                rawCardIndex = 1,
+                isNavigationActive = true,
+            )
+        )
+        assertEquals(
+            0,
+            LeftSubCardAutoSwitch.resolveLeftMapSurfaceType(
+                rawCardIndex = 4,
+                isNavigationActive = false,
+            )
+        )
+    }
+
+    @Test
     fun `tbt only does not activate navigation card`() {
         assertEquals(
             false,

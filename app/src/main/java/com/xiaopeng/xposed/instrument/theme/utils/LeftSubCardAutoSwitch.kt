@@ -19,12 +19,22 @@ package com.xiaopeng.xposed.instrument.theme.utils
 object LeftSubCardAutoSwitch {
     const val NAVIGATION_CARD_INDEX: Int = 0
     const val MEDIA_CARD_INDEX: Int = 1
+    const val NO_LEFT_MAP_SURFACE_TYPE: Int = 0
+    const val LEFT_SD_MAP_SURFACE_TYPE: Int = 2
 
     fun resolve(rawCardIndex: Int, isNavigationActive: Boolean): Int {
         if (rawCardIndex != NAVIGATION_CARD_INDEX) {
             return rawCardIndex
         }
         return if (isNavigationActive) NAVIGATION_CARD_INDEX else MEDIA_CARD_INDEX
+    }
+
+    fun resolveLeftMapSurfaceType(rawCardIndex: Int, isNavigationActive: Boolean): Int {
+        val effectiveCardIndex = resolve(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+        if (effectiveCardIndex == NAVIGATION_CARD_INDEX) {
+            return LEFT_SD_MAP_SURFACE_TYPE
+        }
+        return NO_LEFT_MAP_SURFACE_TYPE
     }
 
     fun isNavigationActive(
