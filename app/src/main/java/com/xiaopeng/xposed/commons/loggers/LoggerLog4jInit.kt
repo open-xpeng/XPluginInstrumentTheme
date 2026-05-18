@@ -41,7 +41,7 @@ object LoggerLog4jInit : (Context) -> Unit {
     override fun invoke(context: Context) {
         val loggerContext: LoggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         loggerContext.reset()
-        loggerContext.putProperty("CACHE_DIR" , File(context.externalCacheDir, "HyperHDH").absolutePath)
+        loggerContext.putProperty("CACHE_DIR" , File(context.externalCacheDir, "XTheme").absolutePath)
         loggerContext.putProperty("PROCESS_ID", mProcessName)
 
         val logger: Logger = loggerContext.getLogger("ROOT")
