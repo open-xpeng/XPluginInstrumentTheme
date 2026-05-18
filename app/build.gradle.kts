@@ -112,13 +112,12 @@ dependencies {
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.core)
-    implementation(libs.koin.android)
 
     implementation(libs.slf4j.api)
     implementation(libs.slf4j.logback)
 
-    implementation(libs.rxjava.core)
-    implementation(libs.rxjava.android)
+//    implementation(libs.rxjava.core)
+//    implementation(libs.rxjava.android)
 
     implementation(libs.common.io)
     implementation(libs.common.gson)

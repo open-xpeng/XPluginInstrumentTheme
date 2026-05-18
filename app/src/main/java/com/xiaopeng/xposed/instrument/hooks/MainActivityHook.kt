@@ -17,6 +17,7 @@
 package com.xiaopeng.xposed.instrument.hooks
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Surface
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
@@ -40,36 +41,20 @@ import org.joor.Reflect
 
 object MainActivityHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
-    private val mFragmentTag: String = MapFullFragment::class.java.name
     private const val NAVI_SR_FRAGMENT_NAME: String = "com.xiaopeng.instrument.view.NaviSRFragment"
+
+    private val mFragmentTag: String = MapFullFragment::class.java.name
     private val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
-        XposedHelpersWrapper.findAndHookMethod(
-            MainActivity::class.java,
-            "onCreate",
-            Bundle::class.java,
-            mXCMethodOnViewCreated
-        )
+        mLogger.error("event=hook_registered targetClass={} targetMethod={}", MainActivity::class.java.name, "onCreate")
+        XposedHelpersWrapper.findAndHookMethod(MainActivity::class.java, "onCreate", Bundle::class.java, mXCMethodOnViewCreated)
         if (mLogger.isDebugEnabled) {
-            mLogger.debug(
-                "event=hook_registered targetClass={} targetMethod={}",
-                MainActivity::class.java.name,
-                "onCreate"
-            )
+            mLogger.debug("event=hook_registered targetClass={} targetMethod={}", MainActivity::class.java.name, "onCreate")
         }
-        XposedHelpersWrapper.findAndHookMethod(
-            MainActivity::class.java,
-            "showFragmentByClass",
-            Class::class.java,
-            mXCMethodShowFragmentByClass
-        )
+        XposedHelpersWrapper.findAndHookMethod(MainActivity::class.java, "showFragmentByClass", Class::class.java, mXCMethodShowFragmentByClass)
         if (mLogger.isDebugEnabled) {
-            mLogger.debug(
-                "event=hook_registered targetClass={} targetMethod={}",
-                MainActivity::class.java.name,
-                "showFragmentByClass"
-            )
+            mLogger.debug("event=hook_registered targetClass={} targetMethod={}", MainActivity::class.java.name, "showFragmentByClass")
         }
         if (mLogger.isInfoEnabled) {
             mLogger.info("event=hook_register_completed targetClass={}", MainActivity::class.java.name)
