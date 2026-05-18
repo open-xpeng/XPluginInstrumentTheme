@@ -97,9 +97,6 @@ kotlin {
 }
 
 dependencies {
-    implementation(libs.common.joor)
-    testImplementation("junit:junit:4.13.2")
-
     compileOnly(project(":stub"))
     compileOnly(libs.androidx.core.ktx)
     compileOnly(libs.androidx.appcompat)
@@ -112,4 +109,20 @@ dependencies {
 
     compileOnly(libs.common.xposed)
     compileOnly(libs.common.framework)
+
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+
+    implementation(libs.slf4j.api)
+    implementation(libs.slf4j.logback)
+
+    implementation(libs.rxjava.core)
+    implementation(libs.rxjava.android)
+
+    implementation(libs.common.io)
+    implementation(libs.common.gson)
+    implementation(libs.common.joor)
+
+    testImplementation(libs.common.junit)
 }

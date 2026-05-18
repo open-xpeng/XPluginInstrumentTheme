@@ -1,1 +1,2 @@
-com.xiaopeng.xposed.instrument.theme.XposedMan
+com.xiaopeng.xposed.instrument.XposedMain
+com.xiaopeng.xposed.montecarlo.XposedMain

@@ -18,7 +18,7 @@
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
     android:background="@android:color/transparent"
-    tools:context=".widgets.MapLeftInfoViewGroup">
+    tools:context="com.xiaopeng.xposed.instrument.widgets.MapLeftInfoViewGroup">
 
     <com.xiaopeng.xui.widget.XRelativeLayout
         android:layout_width="@dimen/info_width"
