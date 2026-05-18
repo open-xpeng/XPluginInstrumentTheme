@@ -17,12 +17,10 @@
 package com.xiaopeng.xposed.commons.wrappers
 
 import de.robv.android.xposed.XC_MethodHook
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 open class XCMethodHookWrapper : XC_MethodHook() {
 
-    internal val mLogger: Logger = LoggerFactory.getLogger(this.javaClass.simpleName)
+    internal val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
 
     final override fun beforeHookedMethod(methodHookParam: MethodHookParam) {
         super.beforeHookedMethod(methodHookParam)

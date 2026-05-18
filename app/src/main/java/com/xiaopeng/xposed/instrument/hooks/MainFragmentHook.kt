@@ -29,8 +29,6 @@ import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
@@ -39,7 +37,7 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
     private const val KEY_TURN_GUIDANCE_VISIBLE: String = "xplugin.left_turn_guidance_visible"
     private const val KEY_TBT_VISIBLE: String = "xplugin.left_tbt_visible"
 
-    private val mLogger: Logger = LoggerFactory.getLogger(this.javaClass)
+    private val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onViewCreated", View::class.java, Bundle::class.java, mXCMethodOnViewCreated)

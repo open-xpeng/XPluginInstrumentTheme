@@ -46,10 +46,10 @@ import com.xiaopeng.xposed.instrument.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.utils.LayoutInflaterXposed
 import com.xiaopeng.xposed.instrument.utils.LeftSubCardAutoSwitch
 import com.xiaopeng.xui.widget.XImageView
-import de.robv.android.xposed.XposedBridge
 
 class MapFullFragment : BaseFragment() {
 
+    private val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
     private val mInfoViewModel: SRInfoViewModel by lazy { ViewModelProvider(requireActivity())[SRInfoViewModel::class.java] }
     private val mNaviViewModel: SRNaviViewModel by lazy { ViewModelProvider(requireActivity())[SRNaviViewModel::class.java] }
     private var mRawLeftSubCardIndex: Int? = null
@@ -209,7 +209,7 @@ class MapFullFragment : BaseFragment() {
         try {
             requireContext().startService(intent)
         } catch (t: Throwable) {
-            XposedBridge.log(t)
+            mLogger.error("MapFullFragment:startChangeService", t)
         }
     }
 

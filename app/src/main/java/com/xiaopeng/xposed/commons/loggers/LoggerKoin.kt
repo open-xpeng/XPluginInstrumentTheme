@@ -19,11 +19,10 @@ package com.xiaopeng.xposed.commons.loggers
 import org.koin.core.logger.Level
 import org.koin.core.logger.Logger
 import org.koin.core.logger.MESSAGE
-import org.slf4j.LoggerFactory
 
 object LoggerKoin : Logger(Level.INFO) {
 
-    private val mLogger: org.slf4j.Logger = LoggerFactory.getLogger(this.javaClass.simpleName)
+    private val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
 
     override fun display(level: Level, msg: MESSAGE) {
         when (level) {
