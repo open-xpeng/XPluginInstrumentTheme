@@ -24,6 +24,7 @@ import com.xiaopeng.instrument.manager.SurfaceViewManager
 import com.xiaopeng.instrument.view.MainFragment
 import com.xiaopeng.instrument.viewmodel.NaviViewModel
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardAutoSwitch
+import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardHostState
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardNavigationActivity
 import com.xiaopeng.xposed.instrument.theme.utils.XCMethodHookCatching
 import de.robv.android.xposed.XC_MethodHook
@@ -31,7 +32,6 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
 object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
-
     private const val KEY_RAW_LEFT_SUB_CARD: String = "xplugin.left_raw_sub_card"
     private const val KEY_NAV_ACTIVE: String = "xplugin.left_nav_active"
     private const val KEY_TURN_GUIDANCE_VISIBLE: String = "xplugin.left_turn_guidance_visible"
@@ -39,6 +39,7 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onViewCreated", View::class.java, Bundle::class.java, mXCMethodOnViewCreated)
+        XposedHelpers.findAndHookMethod(MainFragment::class.java, "onResume", mXCMethodOnResume)
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "onHiddenChanged", Boolean::class.java, mXCMethodOnHiddenChanged)
         XposedHelpers.findAndHookMethod(MainFragment::class.java, "showLeftSubCardView", Int::class.javaPrimitiveType, mXCMethodShowLeftSubCardView)
     }
@@ -76,6 +77,16 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         }
     }
 
+    private val mXCMethodOnResume: XC_MethodHook = object : XCMethodHookCatching() {
+        override fun beforeHookedMethodCatching(param: MethodHookParam) {
+            super.beforeHookedMethodCatching(param)
+
+            val fragment = param.thisObject as MainFragment
+            val rawCardIndex = XposedHelpers.getAdditionalInstanceField(fragment, KEY_RAW_LEFT_SUB_CARD) as? Int ?: return
+            XposedHelpers.callMethod(fragment, "showLeftSubCardView", rawCardIndex)
+        }
+    }
+
     private val mXCMethodShowLeftSubCardView: XC_MethodHook = object : XCMethodHookCatching() {
         override fun beforeHookedMethodCatching(param: MethodHookParam) {
             super.beforeHookedMethodCatching(param)
@@ -90,8 +101,16 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             }
 
             val isNavigationActive = XposedHelpers.getAdditionalInstanceField(fragment, KEY_NAV_ACTIVE) as? Boolean ?: false
-            param.args[0] = LeftSubCardAutoSwitch.resolve(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+            val effectiveCardIndex = LeftSubCardAutoSwitch.resolve(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+            syncLeftViewType(effectiveCardIndex = effectiveCardIndex)
+            param.args[0] = effectiveCardIndex
         }
+    }
+
+    private fun syncLeftViewType(effectiveCardIndex: Int) {
+        SurfaceViewManager.getInstance().setLeftViewType(
+            LeftSubCardHostState.leftViewTypeForEffectiveCard(effectiveCardIndex = effectiveCardIndex)
+        )
     }
 
     private fun updateNavigationCardState(fragment: MainFragment): Boolean {

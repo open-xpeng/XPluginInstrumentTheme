@@ -48,16 +48,10 @@ import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardAutoSwitch
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardNavigationActivity
 import com.xiaopeng.xposed.instrument.theme.utils.SrMapSurfaceRecoveryPlan
-import com.xiaopeng.xposed.instrument.theme.utils.TemporaryDebugLogger
 import com.xiaopeng.xui.widget.XImageView
 import de.robv.android.xposed.XposedBridge
 
 class MapFullFragment : BaseFragment() {
-    companion object {
-        private const val LOG_TAG: String = "CloudRecovery"
-    }
-
-
     private val mInfoViewModel: SRInfoViewModel by lazy { ViewModelProvider(requireActivity())[SRInfoViewModel::class.java] }
     private val mNaviViewModel: SRNaviViewModel by lazy { ViewModelProvider(requireActivity())[SRNaviViewModel::class.java] }
     private var mRawLeftSubCardIndex: Int? = null
@@ -213,11 +207,6 @@ class MapFullFragment : BaseFragment() {
 
     private fun scheduleSurfaceRecovery(delayInMillis: Long, reason: String) {
         val rootView = view ?: return
-        TemporaryDebugLogger.log(
-            context = requireContext(),
-            tag = LOG_TAG,
-            message = "schedule recovery reason=$reason delayMs=$delayInMillis hidden=$isHidden",
-        )
         rootView.postDelayed(delayInMillis = delayInMillis) {
             recoverSurfaceSession(reason = reason)
         }
@@ -225,11 +214,6 @@ class MapFullFragment : BaseFragment() {
 
     private fun recoverSurfaceSession(reason: String) {
         val surface = mCardMapSurfaceView.surface
-        TemporaryDebugLogger.log(
-            context = requireContext(),
-            tag = LOG_TAG,
-            message = "recover surface reason=$reason valid=${surface.isValid} initialDone=$mHasCompletedInitialSurfaceRecovery",
-        )
         SurfaceViewManager.getInstance().srSurface = surface
         for (step in SrMapSurfaceRecoveryPlan.recoverySteps()) {
             when (step) {
@@ -251,19 +235,8 @@ class MapFullFragment : BaseFragment() {
         }
 
         try {
-            TemporaryDebugLogger.log(
-                context = requireContext(),
-                tag = LOG_TAG,
-                message = "start create reason=$reason surfaceValid=${surface.isValid}",
-            )
             requireContext().startService(intent)
         } catch (t: Throwable) {
-            TemporaryDebugLogger.logError(
-                context = requireContext(),
-                tag = LOG_TAG,
-                throwable = t,
-                message = "start create failed reason=$reason",
-            )
             XposedBridge.log(t)
         }
     }
@@ -281,19 +254,8 @@ class MapFullFragment : BaseFragment() {
         }
 
         try {
-            TemporaryDebugLogger.log(
-                context = requireContext(),
-                tag = LOG_TAG,
-                message = "start changed reason=$reason width=$width height=$height surfaceValid=${surface.isValid}",
-            )
             requireContext().startService(intent)
         } catch (t: Throwable) {
-            TemporaryDebugLogger.logError(
-                context = requireContext(),
-                tag = LOG_TAG,
-                throwable = t,
-                message = "start changed failed reason=$reason",
-            )
             XposedBridge.log(t)
         }
     }
