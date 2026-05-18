@@ -47,10 +47,16 @@ import com.xiaopeng.xposed.instrument.theme.constants.ConstantSurfaceViewManager
 import com.xiaopeng.xposed.instrument.theme.utils.LayoutInflaterXposed
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardAutoSwitch
 import com.xiaopeng.xposed.instrument.theme.utils.LeftSubCardNavigationActivity
+import com.xiaopeng.xposed.instrument.theme.utils.SrMapSurfaceRecoveryPlan
+import com.xiaopeng.xposed.instrument.theme.utils.TemporaryDebugLogger
 import com.xiaopeng.xui.widget.XImageView
 import de.robv.android.xposed.XposedBridge
 
 class MapFullFragment : BaseFragment() {
+    companion object {
+        private const val LOG_TAG: String = "CloudRecovery"
+    }
+
 
     private val mInfoViewModel: SRInfoViewModel by lazy { ViewModelProvider(requireActivity())[SRInfoViewModel::class.java] }
     private val mNaviViewModel: SRNaviViewModel by lazy { ViewModelProvider(requireActivity())[SRNaviViewModel::class.java] }
@@ -58,6 +64,7 @@ class MapFullFragment : BaseFragment() {
     private var mIsTurnGuidanceVisible: Boolean = false
     private var mIsTbtVisible: Boolean = false
     private var mIsNavigationActive: Boolean = false
+    private var mHasCompletedInitialSurfaceRecovery: Boolean = false
 
     // @formatter:off
     private val mWidgetMapHeight: Int by lazy { ConstantSurfaceViewManager.SR_MAP_HEIGHT }
@@ -87,10 +94,7 @@ class MapFullFragment : BaseFragment() {
 
         this.mNaviLaneInfoView.setBackgroundResource(R.drawable.fragment_map_navi_bg_lane)
 
-        view.postDelayed(delayInMillis = 500) {
-            SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
-            startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
-        }
+        scheduleSurfaceRecovery(delayInMillis = 500, reason = "onViewCreated")
     }
 
     private fun initNaviLaneInfoView() {
@@ -192,15 +196,79 @@ class MapFullFragment : BaseFragment() {
         // }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (!mHasCompletedInitialSurfaceRecovery || isHidden) {
+            return
+        }
+        scheduleSurfaceRecovery(delayInMillis = 100, reason = "onResume")
+    }
+
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (hidden.not()) {
-            SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
-            startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
+            scheduleSurfaceRecovery(delayInMillis = 100, reason = "onHiddenChanged")
         }
     }
 
-    private fun startChangeService(width: Int, height: Int, surface: Surface) {
+    private fun scheduleSurfaceRecovery(delayInMillis: Long, reason: String) {
+        val rootView = view ?: return
+        TemporaryDebugLogger.log(
+            context = requireContext(),
+            tag = LOG_TAG,
+            message = "schedule recovery reason=$reason delayMs=$delayInMillis hidden=$isHidden",
+        )
+        rootView.postDelayed(delayInMillis = delayInMillis) {
+            recoverSurfaceSession(reason = reason)
+        }
+    }
+
+    private fun recoverSurfaceSession(reason: String) {
+        val surface = mCardMapSurfaceView.surface
+        TemporaryDebugLogger.log(
+            context = requireContext(),
+            tag = LOG_TAG,
+            message = "recover surface reason=$reason valid=${surface.isValid} initialDone=$mHasCompletedInitialSurfaceRecovery",
+        )
+        SurfaceViewManager.getInstance().srSurface = surface
+        for (step in SrMapSurfaceRecoveryPlan.recoverySteps()) {
+            when (step) {
+                SrMapSurfaceRecoveryPlan.STEP_CREATE -> startCreateService(surface = surface, reason = reason)
+                SrMapSurfaceRecoveryPlan.STEP_CHANGED -> startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = surface, reason = reason)
+            }
+        }
+        mHasCompletedInitialSurfaceRecovery = true
+    }
+
+    private fun startCreateService(surface: Surface, reason: String) {
+        val intent = Intent()
+        intent.action = ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CREATE
+        intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_SURFACE, /* value = */ surface)
+        intent.setClassName(/* packageName = */ ConstantSurfaceViewManager.PACKAGE_NAME, /* className = */ ConstantSurfaceViewManager.CLASS_NAME)
+
+        if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
+            return
+        }
+
+        try {
+            TemporaryDebugLogger.log(
+                context = requireContext(),
+                tag = LOG_TAG,
+                message = "start create reason=$reason surfaceValid=${surface.isValid}",
+            )
+            requireContext().startService(intent)
+        } catch (t: Throwable) {
+            TemporaryDebugLogger.logError(
+                context = requireContext(),
+                tag = LOG_TAG,
+                throwable = t,
+                message = "start create failed reason=$reason",
+            )
+            XposedBridge.log(t)
+        }
+    }
+
+    private fun startChangeService(width: Int, height: Int, surface: Surface, reason: String) {
         val intent = Intent()
         intent.setAction(ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CHANGED)
         intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_WIDTH, /* value = */ width)
@@ -213,8 +281,19 @@ class MapFullFragment : BaseFragment() {
         }
 
         try {
+            TemporaryDebugLogger.log(
+                context = requireContext(),
+                tag = LOG_TAG,
+                message = "start changed reason=$reason width=$width height=$height surfaceValid=${surface.isValid}",
+            )
             requireContext().startService(intent)
         } catch (t: Throwable) {
+            TemporaryDebugLogger.logError(
+                context = requireContext(),
+                tag = LOG_TAG,
+                throwable = t,
+                message = "start changed failed reason=$reason",
+            )
             XposedBridge.log(t)
         }
     }
