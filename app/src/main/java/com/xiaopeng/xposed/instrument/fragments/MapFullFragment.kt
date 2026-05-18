@@ -83,6 +83,15 @@ class MapFullFragment : BaseFragment() {
         initLeftSubCardAutoSwitch()
         initObservers()
 
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=fragment_view_created fragment={} width={} height={}",
+                this.javaClass.simpleName,
+                mWidgetMapWidth,
+                mWidgetMapHeight
+            )
+        }
+
         this.mNaviLaneInfoView.setBackgroundResource(R.drawable.fragment_map_navi_bg_lane)
 
         view.postDelayed(delayInMillis = 500) {
@@ -143,6 +152,16 @@ class MapFullFragment : BaseFragment() {
         mIsTbtVisible = naviTBtVisibility.value == true
         mIsNavigationActive = resolveNavigationCardActive()
 
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=hook_state_initialized fragment={} turnGuidanceVisible={} tbtVisible={} navActive={}",
+                this.javaClass.simpleName,
+                mIsTurnGuidanceVisible,
+                mIsTbtVisible,
+                mIsNavigationActive
+            )
+        }
+
         setLiveDataObserver(naviGuidenceVisibility, navigationObserver { isTurnGuidanceVisible ->
             mIsTurnGuidanceVisible = isTurnGuidanceVisible
         })
@@ -167,6 +186,15 @@ class MapFullFragment : BaseFragment() {
     private fun renderLeftSubCard(rawCardIndex: Int) {
         mRawLeftSubCardIndex = rawCardIndex
         val effectiveCardIndex = LeftSubCardAutoSwitch.resolve(rawCardIndex = rawCardIndex, isNavigationActive = mIsNavigationActive)
+        if (mLogger.isDebugEnabled) {
+            mLogger.debug(
+                "event=card_render_resolved fragment={} rawValue={} effectiveValue={} navActive={}",
+                this.javaClass.simpleName,
+                rawCardIndex,
+                effectiveCardIndex,
+                mIsNavigationActive
+            )
+        }
         mLeftInfoViewGroup.showSubCardView(effectiveCardIndex)
     }
 
@@ -182,6 +210,14 @@ class MapFullFragment : BaseFragment() {
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=fragment_hidden_changed fragment={} hidden={} rawValue={}",
+                this.javaClass.simpleName,
+                hidden,
+                mRawLeftSubCardIndex
+            )
+        }
         if (hidden) {
             return
         }
@@ -195,6 +231,19 @@ class MapFullFragment : BaseFragment() {
     }
 
     private fun startChangeService(width: Int, height: Int, surface: Surface) {
+        if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=surface_change_service_skipped fragment={} reason={} width={} height={}",
+                    this.javaClass.simpleName,
+                    "running_test_platform",
+                    width,
+                    height
+                )
+            }
+            return
+        }
+
         val intent = Intent()
         intent.setAction(ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CHANGED)
         intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_WIDTH, /* value = */ width)
@@ -202,12 +251,26 @@ class MapFullFragment : BaseFragment() {
         intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_SURFACE, /* value = */ surface)
         intent.setClassName(/* packageName = */ ConstantSurfaceViewManager.PACKAGE_NAME, /* className = */ ConstantSurfaceViewManager.CLASS_NAME)
 
-        if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
-            return
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=surface_change_service_start fragment={} width={} height={} action={}",
+                this.javaClass.simpleName,
+                width,
+                height,
+                ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CHANGED
+            )
         }
 
         try {
             requireContext().startService(intent)
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=surface_change_service_completed fragment={} width={} height={}",
+                    this.javaClass.simpleName,
+                    width,
+                    height
+                )
+            }
         } catch (t: Throwable) {
             mLogger.error("MapFullFragment:startChangeService", t)
         }
@@ -217,6 +280,14 @@ class MapFullFragment : BaseFragment() {
         return object : Observer<T> {
             override fun onChanged(value: T) {
                 if (isHidden) {
+                    if (mLogger.isDebugEnabled) {
+                        mLogger.debug(
+                            "event=observer_skipped fragment={} reason={} valueClass={}",
+                            this@MapFullFragment.javaClass.simpleName,
+                            "fragment_hidden",
+                            value?.javaClass?.simpleName
+                        )
+                    }
                     return
                 }
                 block(value)
@@ -228,14 +299,52 @@ class MapFullFragment : BaseFragment() {
         return object : Observer<Boolean> {
             override fun onChanged(value: Boolean) {
                 block(value)
+                val previousNavigationActive = mIsNavigationActive
                 if (!updateNavigationCardState()) {
+                    if (mLogger.isDebugEnabled) {
+                        mLogger.debug(
+                            "event=observer_skipped fragment={} reason={} newValue={} navActive={}",
+                            this@MapFullFragment.javaClass.simpleName,
+                            "navigation_state_unchanged",
+                            value,
+                            mIsNavigationActive
+                        )
+                    }
                     return
                 }
+                if (mLogger.isInfoEnabled) {
+                    mLogger.info(
+                        "event=hook_state_changed fragment={} previousValue={} newValue={} turnGuidanceVisible={} tbtVisible={}",
+                        this@MapFullFragment.javaClass.simpleName,
+                        previousNavigationActive,
+                        mIsNavigationActive,
+                        mIsTurnGuidanceVisible,
+                        mIsTbtVisible
+                    )
+                }
                 if (isHidden) {
+                    if (mLogger.isDebugEnabled) {
+                        mLogger.debug(
+                            "event=observer_skipped fragment={} reason={} navActive={}",
+                            this@MapFullFragment.javaClass.simpleName,
+                            "fragment_hidden",
+                            mIsNavigationActive
+                        )
+                    }
                     return
                 }
 
-                val rawCardIndex = mRawLeftSubCardIndex ?: return
+                val rawCardIndex = mRawLeftSubCardIndex ?: run {
+                    if (mLogger.isDebugEnabled) {
+                        mLogger.debug(
+                            "event=observer_skipped fragment={} reason={} navActive={}",
+                            this@MapFullFragment.javaClass.simpleName,
+                            "left_sub_card_uninitialized",
+                            mIsNavigationActive
+                        )
+                    }
+                    return
+                }
                 renderLeftSubCard(rawCardIndex = rawCardIndex)
             }
         }

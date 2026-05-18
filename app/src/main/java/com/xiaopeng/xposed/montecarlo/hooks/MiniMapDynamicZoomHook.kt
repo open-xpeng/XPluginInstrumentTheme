@@ -31,6 +31,12 @@ object MiniMapDynamicZoomHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
             loadPackageParam.classLoader
         )
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=hook_class_resolved targetClass={}",
+                mMiniMapViewWrapperClass?.name
+            )
+        }
 
         XposedHelpersWrapper.findAndHookMethod(
             "com.xiaopeng.montecarlo.dynamiclevel.base.DynamicLevelHelper",
@@ -38,6 +44,13 @@ object MiniMapDynamicZoomHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             "enableDynamicLevel",
             mXCMethodEnableDynamicLevel
         )
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=hook_registered targetClass={} targetMethod={}",
+                "com.xiaopeng.montecarlo.dynamiclevel.base.DynamicLevelHelper",
+                "enableDynamicLevel"
+            )
+        }
 
         XposedHelpersWrapper.findAndHookMethod(
             "com.xiaopeng.montecarlo.navcore.mapdisplay.MapViewWrapper",
@@ -46,6 +59,13 @@ object MiniMapDynamicZoomHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             Float::class.javaPrimitiveType!!,
             mXCMethodSetMapLevel
         )
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=hook_registered targetClass={} targetMethod={}",
+                "com.xiaopeng.montecarlo.navcore.mapdisplay.MapViewWrapper",
+                "setMapLevel"
+            )
+        }
     }
 
     private const val MAP_LEVEL_OFFSET = 1.5f
@@ -58,19 +78,66 @@ object MiniMapDynamicZoomHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         override fun beforeHookedMethodCatching(methodHookParam: MethodHookParam) {
             super.beforeHookedMethodCatching(methodHookParam)
 
-            val miniMapViewWrapperClass = mMiniMapViewWrapperClass ?: return
-            val thisObject = methodHookParam.thisObject ?: return
+            val miniMapViewWrapperClass = mMiniMapViewWrapperClass
+            if (miniMapViewWrapperClass == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "setMapLevel",
+                        "mini_map_view_wrapper_class_unresolved"
+                    )
+                }
+                return
+            }
+            val thisObject = methodHookParam.thisObject
+            if (thisObject == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "setMapLevel",
+                        "this_object_null"
+                    )
+                }
+                return
+            }
             if (!miniMapViewWrapperClass.isInstance(thisObject)) {
                 return
             }
 
-            val level = methodHookParam.args[0] as? Float ?: return
-            XposedHelpers.setAdditionalInstanceField(thisObject, KEY_RAW_MAP_LEVEL, level)
-            val adjustedLevel = level + MAP_LEVEL_OFFSET
-            methodHookParam.args[0] = if (adjustedLevel > MAX_MAP_LEVEL) {
+            val rawValue = methodHookParam.args[0] as? Float
+            if (rawValue == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={} valueClass={}",
+                        "setMapLevel",
+                        "map_level_not_float",
+                        methodHookParam.args[0]?.javaClass?.name
+                    )
+                }
+                return
+            }
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_resolved targetMethod={} rawValue={}",
+                    "setMapLevel",
+                    rawValue
+                )
+            }
+            XposedHelpers.setAdditionalInstanceField(thisObject, KEY_RAW_MAP_LEVEL, rawValue)
+            val adjustedLevel = rawValue + MAP_LEVEL_OFFSET
+            val effectiveValue = if (adjustedLevel > MAX_MAP_LEVEL) {
                 MAX_MAP_LEVEL
             } else {
                 adjustedLevel
+            }
+            methodHookParam.args[0] = effectiveValue
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_applied targetMethod={} rawValue={} effectiveValue={}",
+                    "setMapLevel",
+                    rawValue,
+                    effectiveValue
+                )
             }
         }
     }
@@ -79,14 +146,71 @@ object MiniMapDynamicZoomHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         override fun afterHookedMethodCatching(methodHookParam: MethodHookParam) {
             super.afterHookedMethodCatching(methodHookParam)
 
-            val miniMapViewWrapperClass = mMiniMapViewWrapperClass ?: return
-            val mapViewWrapper = XposedHelpers.getObjectField(methodHookParam.thisObject, "mMapViewWrapper") ?: return
+            val miniMapViewWrapperClass = mMiniMapViewWrapperClass
+            if (miniMapViewWrapperClass == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "enableDynamicLevel",
+                        "mini_map_view_wrapper_class_unresolved"
+                    )
+                }
+                return
+            }
+            val dynamicLevelHelper = methodHookParam.thisObject
+            if (dynamicLevelHelper == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "enableDynamicLevel",
+                        "this_object_null"
+                    )
+                }
+                return
+            }
+            val mapViewWrapper =
+                XposedHelpers.getObjectField(dynamicLevelHelper, "mMapViewWrapper")
+                    ?: run {
+                        if (mLogger.isDebugEnabled) {
+                            mLogger.debug(
+                                "event=hook_skipped targetMethod={} reason={}",
+                                "enableDynamicLevel",
+                                "map_view_wrapper_null"
+                            )
+                        }
+                        return
+                    }
             if (!miniMapViewWrapperClass.isInstance(mapViewWrapper)) {
                 return
             }
 
-            val level = XposedHelpers.getAdditionalInstanceField(mapViewWrapper, KEY_RAW_MAP_LEVEL) as? Float ?: return
-            XposedHelpers.setFloatField(methodHookParam.thisObject, "mPreLevel", level)
+            val rawValue = XposedHelpers.getAdditionalInstanceField(mapViewWrapper, KEY_RAW_MAP_LEVEL) as? Float
+            if (rawValue == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "enableDynamicLevel",
+                        "raw_map_level_missing"
+                    )
+                }
+                return
+            }
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_resolved targetMethod={} rawValue={}",
+                    "enableDynamicLevel",
+                    rawValue
+                )
+            }
+            XposedHelpers.setFloatField(dynamicLevelHelper, "mPreLevel", rawValue)
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_applied targetMethod={} rawValue={} writtenValue={}",
+                    "enableDynamicLevel",
+                    rawValue,
+                    rawValue
+                )
+            }
         }
     }
 }

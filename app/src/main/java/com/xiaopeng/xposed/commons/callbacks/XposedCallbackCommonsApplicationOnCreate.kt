@@ -32,7 +32,10 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 class XposedCallbackCommonsApplicationOnCreate(
-    private val mLoadPackageParam: XC_LoadPackage.LoadPackageParam
+    private val mLoadPackageParam: XC_LoadPackage.LoadPackageParam,
+    private val mModuleName: String,
+    private val mModulePath: String? = null,
+    private val mHookRegistrations: List<Pair<String, String>> = emptyList()
 ) : XCMethodHookWrapper(), KoinComponent {
 
     override fun beforeHookedMethodCatching(methodHookParam: MethodHookParam) {
@@ -45,6 +48,7 @@ class XposedCallbackCommonsApplicationOnCreate(
         initKoin(application)
         initSlf4j(application)
         printLogger()
+        printModuleEntrySummary()
     }
 
     private fun initKoin(application: Application) {
@@ -73,6 +77,26 @@ class XposedCallbackCommonsApplicationOnCreate(
     private fun printLogger() {
         mLogger.info("=========================[START]=========================")
         mLogger.info("process={}", mLoadPackageParam.processName)
+    }
+
+    private fun printModuleEntrySummary() {
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=module_entry_summary module={} packageName={} process={} modulePath={}",
+                mModuleName,
+                mLoadPackageParam.packageName,
+                mLoadPackageParam.processName,
+                mModulePath
+            )
+            for ((targetClass, targetMethod) in mHookRegistrations) {
+                mLogger.info(
+                    "event=hook_registration_summary module={} targetClass={} targetMethod={}",
+                    mModuleName,
+                    targetClass,
+                    targetMethod
+                )
+            }
+        }
     }
 
 }

@@ -51,7 +51,20 @@ class XposedMain : IXposedHookLoadPackageCatching, IXposedHookZygoteInit {
         XposedHelpersWrapper.findAndHookMethod(
             Application::class.java,
             "onCreate",
-            XposedCallbackCommonsApplicationOnCreate(mLoadPackageParam = loadPackageParam)
+            XposedCallbackCommonsApplicationOnCreate(
+                mLoadPackageParam = loadPackageParam,
+                mModuleName = "instrument",
+                mModulePath = MODULE_PATH,
+                mHookRegistrations = listOf(
+                    Application::class.java.name to "onCreate",
+                    "com.xiaopeng.instrument.view.MainActivity" to "onCreate",
+                    "com.xiaopeng.instrument.view.MainActivity" to "showFragmentByClass",
+                    "com.xiaopeng.instrument.view.MainFragment" to "onViewCreated",
+                    "com.xiaopeng.instrument.view.MainFragment" to "onResume",
+                    "com.xiaopeng.instrument.view.MainFragment" to "onHiddenChanged",
+                    "com.xiaopeng.instrument.view.MainFragment" to "showLeftSubCardView"
+                )
+            )
         )
 
         MainActivityHook(loadPackageParam = loadPackageParam)

@@ -36,7 +36,17 @@ class XposedMain : IXposedHookLoadPackageCatching {
         XposedHelpersWrapper.findAndHookMethod(
             clazz = Application::class.java,
             methodName = "onCreate",
-            XposedCallbackCommonsApplicationOnCreate(mLoadPackageParam = loadPackageParam)
+            XposedCallbackCommonsApplicationOnCreate(
+                mLoadPackageParam = loadPackageParam,
+                mModuleName = "montecarlo",
+                mHookRegistrations = listOf(
+                    Application::class.java.name to "onCreate",
+                    "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper" to "getDefaultMapViewTop",
+                    "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper" to "setMapMode",
+                    "com.xiaopeng.montecarlo.navcore.mapdisplay.MapViewWrapper" to "setMapLevel",
+                    "com.xiaopeng.montecarlo.dynamiclevel.base.DynamicLevelHelper" to "enableDynamicLevel"
+                )
+            )
         )
 
         MiniMapViewCenterHook(loadPackageParam = loadPackageParam)

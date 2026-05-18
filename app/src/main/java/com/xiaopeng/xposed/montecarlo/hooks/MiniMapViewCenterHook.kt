@@ -24,6 +24,8 @@ import io.github.sollyu.xposed.hyper.hdh.commons.wrappers.XposedHelpersWrapper
 
 object MiniMapViewCenterHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
 
+    private val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
+
     override fun invoke(loadPackageParam: XC_LoadPackage.LoadPackageParam) {
         XposedHelpersWrapper.findAndHookMethod(
             "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
@@ -31,7 +33,14 @@ object MiniMapViewCenterHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             "getDefaultMapViewTop",
             mXCMethodGetDefaultMapViewTop
         )
-        XposedHelpers.findAndHookMethod(
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=hook_registered targetClass={} targetMethod={}",
+                "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
+                "getDefaultMapViewTop"
+            )
+        }
+        XposedHelpersWrapper.findAndHookMethod(
             "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
             loadPackageParam.classLoader,
             "setMapMode",
@@ -40,7 +49,13 @@ object MiniMapViewCenterHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             Boolean::class.javaPrimitiveType!!,
             mXCMethodSetMapMode
         )
-
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=hook_registered targetClass={} targetMethod={}",
+                "com.xiaopeng.montecarlo.navcore.mapdisplay.MiniMapViewWrapper",
+                "setMapMode"
+            )
+        }
     }
 
     private const val FULL_MAP_HEIGHT = 720
@@ -50,9 +65,31 @@ object MiniMapViewCenterHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         override fun afterHookedMethodCatching(methodHookParam: MethodHookParam) {
             super.afterHookedMethodCatching(methodHookParam)
 
-            val mapHeight = XposedHelpers.callMethod(methodHookParam.thisObject, "getMapHeight") as? Int ?: return
-            if (mapHeight == FULL_MAP_HEIGHT) {
-                methodHookParam.result = FULL_MAP_VIEW_TOP
+            val miniMapViewWrapper = methodHookParam.thisObject
+            val mapHeight = XposedHelpers.callMethod(miniMapViewWrapper, "getMapHeight") as? Int
+            if (mapHeight == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "getDefaultMapViewTop",
+                        "map_height_unavailable"
+                    )
+                }
+                return
+            }
+            if (mapHeight != FULL_MAP_HEIGHT) {
+                return
+            }
+            val rawValue = methodHookParam.result as? Int
+            methodHookParam.result = FULL_MAP_VIEW_TOP
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_applied targetMethod={} rawValue={} effectiveValue={} mapHeight={}",
+                    "getDefaultMapViewTop",
+                    rawValue,
+                    FULL_MAP_VIEW_TOP,
+                    mapHeight
+                )
             }
         }
     }
@@ -61,13 +98,46 @@ object MiniMapViewCenterHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         override fun afterHookedMethodCatching(methodHookParam: MethodHookParam) {
             super.afterHookedMethodCatching(methodHookParam)
 
-            val mapHeight = XposedHelpers.callMethod(methodHookParam.thisObject, "getMapHeight") as? Int ?: return
+            val miniMapViewWrapper = methodHookParam.thisObject
+            val mapHeight = XposedHelpers.callMethod(miniMapViewWrapper, "getMapHeight") as? Int
+            if (mapHeight == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "setMapMode",
+                        "map_height_unavailable"
+                    )
+                }
+                return
+            }
             if (mapHeight != FULL_MAP_HEIGHT) {
                 return
             }
 
-            val mapLeft = XposedHelpers.callMethod(methodHookParam.thisObject, "getDefaultMapViewLeft") as? Int ?: return
-            XposedHelpers.callMethod(methodHookParam.thisObject, "setMapViewLeftTop", mapLeft, FULL_MAP_VIEW_TOP)
+            val mapLeft = XposedHelpers.callMethod(miniMapViewWrapper, "getDefaultMapViewLeft") as? Int
+            if (mapLeft == null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={}",
+                        "setMapMode",
+                        "map_left_unavailable"
+                    )
+                }
+                return
+            }
+            XposedHelpers.callMethod(miniMapViewWrapper, "setMapViewLeftTop", mapLeft, FULL_MAP_VIEW_TOP)
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_applied targetMethod={} mapMode={} animated={} force={} mapLeft={} appliedTop={} mapHeight={}",
+                    "setMapMode",
+                    methodHookParam.args.getOrNull(0) as? Int,
+                    methodHookParam.args.getOrNull(1) as? Boolean,
+                    methodHookParam.args.getOrNull(2) as? Boolean,
+                    mapLeft,
+                    FULL_MAP_VIEW_TOP,
+                    mapHeight
+                )
+            }
         }
     }
 }

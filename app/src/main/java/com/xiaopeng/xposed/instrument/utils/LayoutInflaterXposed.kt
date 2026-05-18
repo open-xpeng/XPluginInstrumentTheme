@@ -25,10 +25,19 @@ import org.joor.Reflect
 
 object LayoutInflaterXposed {
 
+    private val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
+
     fun from(context: Context): LayoutInflater {
         val mixedInflater: LayoutInflater = LayoutInflater.from(context)
         val factory = Factory(classLoader = LayoutInflaterXposed::class.java.classLoader)
         Reflect.on(/* object = */ mixedInflater).set("mPrivateFactory", factory)
+        if (mLogger.isDebugEnabled) {
+            mLogger.debug(
+                "event=layout_inflater_initialized context={} hasClassLoader={}",
+                context.javaClass.name,
+                LayoutInflaterXposed::class.java.classLoader != null
+            )
+        }
         return mixedInflater
     }
 
@@ -40,6 +49,9 @@ object LayoutInflaterXposed {
                 null
             }
             if (view1 != null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug("event=layout_inflate_intercepted targetClass={} result={}", name, true)
+                }
                 return view1
             }
 
@@ -49,9 +61,15 @@ object LayoutInflaterXposed {
                 null
             }
             if (view2 != null) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug("event=layout_inflate_intercepted targetClass={} result={}", name, true)
+                }
                 return view2
             }
 
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug("event=layout_inflate_intercepted targetClass={} result={}", name, false)
+            }
             return null
         }
 

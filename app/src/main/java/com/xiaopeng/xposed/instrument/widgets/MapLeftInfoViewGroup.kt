@@ -27,6 +27,12 @@ class MapLeftInfoViewGroup : MapBaseInfoView {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes)
 
+    init {
+        if (mLogger.isDebugEnabled) {
+            mLogger.debug("event=view_group_initialized view={} layout={}", this.javaClass.simpleName, R.layout.layout_info_left_map)
+        }
+    }
+
     override val layout: Int
         get() = R.layout.layout_info_left_map
 

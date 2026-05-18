@@ -38,6 +38,8 @@ abstract class MapBaseInfoView : XRelativeLayout {
     abstract val layout: Int
     abstract val position: Int
 
+    protected val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
+
     private val mRecyclerView: XRecyclerView
     private val mAnimatorHelper: AnimatorHelper
     private val mListHideAnimator: BaseViewAnimator
@@ -67,6 +69,9 @@ abstract class MapBaseInfoView : XRelativeLayout {
     fun showList(z: Boolean) {
         this.mRecyclerView.visibility = if (z) VISIBLE else GONE;
         this.mAnimatorHelper.showAnimator(z, this.mListShowAnimator, this.mListHideAnimator, this.mRecyclerView);
+        if (mLogger.isDebugEnabled) {
+            mLogger.debug("event=hook_value_applied targetMethod={} result={}", "showList", z)
+        }
     }
 
     fun updateListData(infoContainBean: InfoContainBean?) {
@@ -76,6 +81,14 @@ abstract class MapBaseInfoView : XRelativeLayout {
         this.mInfoContainBean = infoContainBean;
         this.cardListAdapter.updateAllItem(/* list = */ infoContainBean.getInfoBeanList());
         this.cardPickerLayoutManager.scrollToTargetPosition(infoContainBean.infoBeanList.size, infoContainBean.selectIndex);
+        if (mLogger.isDebugEnabled) {
+            mLogger.debug(
+                "event=hook_value_applied targetMethod={} result={} selectIndex={}",
+                "updateListData",
+                infoContainBean.infoBeanList.size,
+                infoContainBean.selectIndex
+            )
+        }
     }
 
 }

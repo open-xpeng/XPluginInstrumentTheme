@@ -72,15 +72,36 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             XposedHelpers.setAdditionalInstanceField(fragment, KEY_TBT_VISIBLE, naviTBtVisibility.value == true)
             updateNavigationCardState(fragment = fragment)
 
-            naviGuidenceVisibility.observe(fragment, OnNavigationSignalChanged(fragment = fragment, signalKey = KEY_TURN_GUIDANCE_VISIBLE))
-            naviTBtVisibility.observe(fragment, OnNavigationSignalChanged(fragment = fragment, signalKey = KEY_TBT_VISIBLE))
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=hook_state_initialized fragment={} turnGuidanceVisible={} tbtVisible={} navActive={}",
+                    fragment.javaClass.simpleName,
+                    naviGuidenceVisibility.value == true,
+                    naviTBtVisibility.value == true,
+                    XposedHelpers.getAdditionalInstanceField(fragment, KEY_NAV_ACTIVE)
+                )
+            }
+
+            naviGuidenceVisibility.observe(fragment.viewLifecycleOwner, OnNavigationSignalChanged(fragment = fragment, signalKey = KEY_TURN_GUIDANCE_VISIBLE))
+            naviTBtVisibility.observe(fragment.viewLifecycleOwner, OnNavigationSignalChanged(fragment = fragment, signalKey = KEY_TBT_VISIBLE))
         }
     }
 
     private val mXCMethodOnResume: XC_MethodHook = object : XCMethodHookWrapper() {
         override fun beforeHookedMethodCatching(methodHookParam: MethodHookParam) {
             val fragment = methodHookParam.thisObject as MainFragment
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_enter targetMethod={} fragment={} hidden={}",
+                    "onResume",
+                    fragment.javaClass.simpleName,
+                    fragment.isHidden
+                )
+            }
             if (fragment.isHidden) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug("event=hook_skipped targetMethod={} reason={}", "onResume", "fragment_hidden")
+                }
                 return
             }
             syncLeftMapSurfaceType(fragment = fragment)
@@ -91,12 +112,34 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         override fun afterHookedMethodCatching(methodHookParam: MethodHookParam) {
             val fragment = methodHookParam.thisObject as MainFragment
             val isHidden = methodHookParam.args[0] as Boolean
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=hook_state_changed targetMethod={} fragment={} newValue={}",
+                    "onHiddenChanged",
+                    fragment.javaClass.simpleName,
+                    isHidden
+                )
+            }
             if (isHidden.not()) {
                 val rawCardIndex = XposedHelpers.getAdditionalInstanceField(fragment, KEY_RAW_LEFT_SUB_CARD) as? Int
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_value_resolved targetMethod={} rawValue={}",
+                        "onHiddenChanged",
+                        rawCardIndex
+                    )
+                }
                 if (rawCardIndex != null) {
                     XposedHelpers.callMethod(fragment, "showLeftSubCardView", rawCardIndex)
                 }
                 SurfaceViewManager.getInstance().resumeMainMap()
+                if (mLogger.isInfoEnabled) {
+                    mLogger.info(
+                        "event=hook_value_applied targetMethod={} result={}",
+                        "onHiddenChanged",
+                        "resume_main_map"
+                    )
+                }
             }
         }
     }
@@ -108,16 +151,50 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             val fragment = methodHookParam.thisObject as MainFragment
             val rawCardIndex = methodHookParam.args[0] as Int
 
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_enter targetMethod={} fragment={} rawValue={} hidden={}",
+                    "showLeftSubCardView",
+                    fragment.javaClass.simpleName,
+                    rawCardIndex,
+                    fragment.isHidden
+                )
+            }
             XposedHelpers.setAdditionalInstanceField(fragment, KEY_RAW_LEFT_SUB_CARD, rawCardIndex)
             if (fragment.isHidden) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={} rawValue={}",
+                        "showLeftSubCardView",
+                        "fragment_hidden",
+                        rawCardIndex
+                    )
+                }
                 methodHookParam.result = null
                 return
             }
 
             val isNavigationActive = XposedHelpers.getAdditionalInstanceField(fragment, KEY_NAV_ACTIVE) as? Boolean ?: false
             val effectiveCardIndex = LeftSubCardAutoSwitch.resolve(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_resolved targetMethod={} rawValue={} effectiveValue={} navActive={}",
+                    "showLeftSubCardView",
+                    rawCardIndex,
+                    effectiveCardIndex,
+                    isNavigationActive
+                )
+            }
             syncLeftMapSurfaceType(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
             methodHookParam.args[0] = effectiveCardIndex
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_applied targetMethod={} rawValue={} effectiveValue={}",
+                    "showLeftSubCardView",
+                    rawCardIndex,
+                    effectiveCardIndex
+                )
+            }
         }
     }
 
@@ -141,12 +218,31 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             isTbtVisible = isTbtVisible,
         )
         XposedHelpers.setAdditionalInstanceField(fragment, KEY_NAV_ACTIVE, isNavigationActive)
+        if (previous != isNavigationActive && mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=hook_state_changed fragment={} previousState={} currentState={} turnGuidanceVisible={} tbtVisible={}",
+                fragment.javaClass.simpleName,
+                previous,
+                isNavigationActive,
+                isTurnGuidanceVisible,
+                isTbtVisible
+            )
+        }
         return previous != isNavigationActive
     }
 
     private fun syncLeftMapSurfaceType(fragment: MainFragment) {
         val rawCardIndex = XposedHelpers.getAdditionalInstanceField(fragment, KEY_RAW_LEFT_SUB_CARD) as? Int ?: return
         val isNavigationActive = XposedHelpers.getAdditionalInstanceField(fragment, KEY_NAV_ACTIVE) as? Boolean ?: false
+        if (mLogger.isDebugEnabled) {
+            mLogger.debug(
+                "event=hook_enter targetMethod={} fragment={} rawValue={} navActive={}",
+                "syncLeftMapSurfaceType",
+                fragment.javaClass.simpleName,
+                rawCardIndex,
+                isNavigationActive
+            )
+        }
         syncLeftMapSurfaceType(rawCardIndex = rawCardIndex, isNavigationActive = isNavigationActive)
     }
 
@@ -156,6 +252,15 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
             isNavigationActive = isNavigationActive,
         )
         SurfaceViewManager.getInstance().setLeftViewType(leftMapSurfaceType)
+        if (mLogger.isDebugEnabled) {
+            mLogger.debug(
+                "event=hook_value_applied targetMethod={} rawValue={} navActive={} surfaceType={}",
+                "syncLeftMapSurfaceType",
+                rawCardIndex,
+                isNavigationActive,
+                leftMapSurfaceType
+            )
+        }
     }
 
     private class OnNavigationSignalChanged(
@@ -163,12 +268,37 @@ object MainFragmentHook : (XC_LoadPackage.LoadPackageParam) -> Unit {
         private val signalKey: String,
     ) : Observer<Boolean> {
         override fun onChanged(value: Boolean) {
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_state_changed targetMethod={} fragment={} signalKey={} currentState={}",
+                    "navigationObserver",
+                    fragment.javaClass.simpleName,
+                    signalKey,
+                    value == true
+                )
+            }
             XposedHelpers.setAdditionalInstanceField(fragment, signalKey, value == true)
             if (!updateNavigationCardState(fragment = fragment)) {
+                if (mLogger.isDebugEnabled) {
+                    mLogger.debug(
+                        "event=hook_skipped targetMethod={} reason={} signalKey={}",
+                        "navigationObserver",
+                        "navigation_state_unchanged",
+                        signalKey
+                    )
+                }
                 return
             }
 
             val rawCardIndex = XposedHelpers.getAdditionalInstanceField(fragment, KEY_RAW_LEFT_SUB_CARD) as? Int ?: return
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=hook_value_resolved targetMethod={} signalKey={} rawValue={}",
+                    "navigationObserver",
+                    signalKey,
+                    rawCardIndex
+                )
+            }
             XposedHelpers.callMethod(fragment, "showLeftSubCardView", rawCardIndex)
         }
     }

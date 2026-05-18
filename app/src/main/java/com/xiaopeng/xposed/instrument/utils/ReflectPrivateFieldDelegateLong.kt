@@ -21,7 +21,11 @@ import kotlin.reflect.KProperty
 
 class ReflectPrivateFieldDelegateLong(private val name: String) {
 
+    private val mLogger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(this.javaClass.simpleName)
+
     private var mReflect: Reflect? = null
+    private var mHasLoggedReadSuccess: Boolean = false
+    private var mHasLoggedReadFailure: Boolean = false
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>): Long {
         if (mReflect == null) {
@@ -31,7 +35,20 @@ class ReflectPrivateFieldDelegateLong(private val name: String) {
             mReflect = Reflect.on(/* object = */ thisRef)
         }
         val reflect: Reflect = mReflect!!
-        return reflect.get(/* name = */ name)
+        try {
+            val value: Long = reflect.get(/* name = */ name)
+            if (!mHasLoggedReadSuccess && mLogger.isInfoEnabled) {
+                mLogger.info("event=reflect_field_read key={} result={}", name, value)
+                mHasLoggedReadSuccess = true
+            }
+            return value
+        } catch (throwable: Throwable) {
+            if (!mHasLoggedReadFailure) {
+                mLogger.error("event=reflect_field_read key={} result={}", name, "failed", throwable)
+                mHasLoggedReadFailure = true
+            }
+            throw throwable
+        }
     }
 
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Long) {
