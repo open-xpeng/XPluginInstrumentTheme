@@ -84,7 +84,7 @@ object LoggerLog4jInit : (Context) -> Unit {
 
         val patternLayout = PatternLayoutEncoder()
         patternLayout.context = loggerContext
-        patternLayout.pattern = OptionHelper.substVars("[HyperHDH] %-50(%F:%L) [%-10thread] %m%n", loggerContext)
+        patternLayout.pattern = OptionHelper.substVars("[XTheme] %-50(%F:%L) [%-10thread] %m%n", loggerContext)
         patternLayout.charset = Charsets.UTF_8
         patternLayout.start()
 
@@ -100,7 +100,7 @@ object LoggerLog4jInit : (Context) -> Unit {
 
         val patternLayout = PatternLayoutEncoder()
         patternLayout.context = loggerContext
-        patternLayout.pattern = OptionHelper.substVars($$"[HyperHDH] [%-5level] [${PROCESS_ID}:%-26thread] %m%n", loggerContext)
+        patternLayout.pattern = OptionHelper.substVars($$"[XTheme] [%-5level] [${PROCESS_ID}:%-26thread] %m%n", loggerContext)
         patternLayout.charset = Charsets.UTF_8
         patternLayout.start()
 
