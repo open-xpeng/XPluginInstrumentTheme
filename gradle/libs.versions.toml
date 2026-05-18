@@ -1,6 +1,6 @@
 [versions]
-agp        = "9.2.0"
-kotlin     = "2.3.20"
+agp        = "9.2.1"
+kotlin     = "2.3.21"
 sdkMin     = "24"
 sdkCompile = "37"
 sdkTarget  = "37"
@@ -15,17 +15,27 @@ androidx-recyclerview = "androidx.recyclerview:recyclerview:1.4.0"
 #
 # slf4j
 #
-slf4j-api       = 'org.slf4j:slf4j-api:2.0.17'
+slf4j-api       = 'org.slf4j:slf4j-api:2.0.18'
 slf4j-logback   = 'com.github.tony19:logback-android:3.0.0'
+
+#
+# https://insert-koin.io/docs/setup/koin/
+#
+koin-bom         = { module = "io.insert-koin:koin-bom", version = "4.2.1" }
+koin-core        = { module = "io.insert-koin:koin-core" }
+koin-android     = { module = "io.insert-koin:koin-android" }
+koin-compat      = { module = "io.insert-koin:koin-android-compat" }
 
 #
 # commons
 #
-common-gson      = 'com.google.code.gson:gson:2.13.2'
+common-gson      = 'com.google.code.gson:gson:2.14.0'
 common-guava     = 'com.google.guava:guava:33.6.0-android'
+common-io        = 'commons-io:commons-io:2.4'
 common-joor      = 'org.jooq:joor-java-8:0.9.15'                                # https://github.com/jOOQ/jOOR
 common-xposed    = 'de.robv.android.xposed:api:82'                              # https://mvnrepository.com/artifact/de.robv.android.xposed/api
 common-framework = 'com.rover12421.android.hide:framework:10.0.0_r2'            # https://github.com/rover12421/AndroidHideApi | https://mvnrepository.com/artifact/com.rover12421.android.hide/framework
+common-junit     = 'junit:junit:4.13.2'
 
 #
 # xpeng
@@ -33,6 +43,12 @@ common-framework = 'com.rover12421.android.hide:framework:10.0.0_r2'            
 xpeng-car           = 'io.github.xpeng:car:0.0.2'
 xpeng-xui           = 'io.github.xpeng:xui:0.0.1'
 xpeng-xui-manager   = 'io.github.xpeng:xuimanager:0.0.1'
+
+#
+# rxjava
+#
+rxjava-core      = 'io.reactivex.rxjava3:rxjava:3.1.12'                                 # https://github.com/ReactiveX/RxJava
+rxjava-android   = 'io.reactivex.rxjava3:rxandroid:3.0.2'                               # https://github.com/ReactiveX/RxAndroid
 
 [plugins]
 android-application = { id = "com.android.application"     , version.ref = "agp"    }

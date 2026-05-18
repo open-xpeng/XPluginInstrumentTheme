@@ -1,5 +1,6 @@
 package com.xiaopeng.xposed.instrument.theme.utils
 
+import com.xiaopeng.xposed.instrument.utils.LeftSubCardAutoSwitch
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

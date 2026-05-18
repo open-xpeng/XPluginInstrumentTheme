@@ -19,7 +19,7 @@
     android:layout_height="match_parent"
     android:layout_alignParentEnd="true"
     android:background="@android:color/transparent"
-    tools:context=".widgets.MapRightInfoViewGroup">
+    tools:context="com.xiaopeng.xposed.instrument.widgets.MapRightInfoViewGroup">
 
     <com.xiaopeng.xui.widget.XRelativeLayout
         android:layout_width="@dimen/info_width"
