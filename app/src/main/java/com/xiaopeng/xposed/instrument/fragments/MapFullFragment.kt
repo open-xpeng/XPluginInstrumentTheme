@@ -56,6 +56,7 @@ class MapFullFragment : BaseFragment() {
     private var mIsTurnGuidanceVisible: Boolean = false
     private var mIsTbtVisible: Boolean = false
     private var mIsNavigationActive: Boolean = false
+    private var mHasCompletedInitialSurfaceRecovery: Boolean = false
 
     // @formatter:off
     private val mWidgetMapHeight: Int by lazy { ConstantSurfaceViewManager.SR_MAP_HEIGHT }
@@ -93,11 +94,7 @@ class MapFullFragment : BaseFragment() {
         }
 
         this.mNaviLaneInfoView.setBackgroundResource(R.drawable.fragment_map_navi_bg_lane)
-
-        view.postDelayed(delayInMillis = 500) {
-            SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
-            startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
-        }
+        scheduleSurfaceRecovery(delayInMillis = 500L, reason = "onViewCreated")
     }
 
     private fun initNaviLaneInfoView() {
@@ -208,17 +205,54 @@ class MapFullFragment : BaseFragment() {
         // }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=fragment_resumed fragment={} hidden={} initialRecovered={} hasView={}",
+                this.javaClass.simpleName,
+                isHidden,
+                mHasCompletedInitialSurfaceRecovery,
+                view != null
+            )
+        }
+        if (!SurfaceRecoveryPolicy.shouldRecoverOnResume(mHasCompletedInitialSurfaceRecovery, isHidden)) {
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=surface_recovery_skipped fragment={} reason={} initialRecovered={} hidden={}",
+                    this.javaClass.simpleName,
+                    "resume_not_eligible",
+                    mHasCompletedInitialSurfaceRecovery,
+                    isHidden
+                )
+            }
+            return
+        }
+
+        scheduleSurfaceRecovery(delayInMillis = 100L, reason = "onResume")
+    }
+
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (mLogger.isInfoEnabled) {
             mLogger.info(
-                "event=fragment_hidden_changed fragment={} hidden={} rawValue={}",
+                "event=fragment_hidden_changed fragment={} hidden={} rawValue={} initialRecovered={} hasView={}",
                 this.javaClass.simpleName,
                 hidden,
-                mRawLeftSubCardIndex
+                mRawLeftSubCardIndex,
+                mHasCompletedInitialSurfaceRecovery,
+                view != null
             )
         }
         if (hidden) {
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=surface_recovery_skipped fragment={} reason={} trigger={}",
+                    this.javaClass.simpleName,
+                    "fragment_hidden",
+                    "onHiddenChanged"
+                )
+            }
             return
         }
 
@@ -226,19 +260,150 @@ class MapFullFragment : BaseFragment() {
         if (rawCardIndex != null) {
             renderLeftSubCard(rawCardIndex = rawCardIndex)
         }
-        SurfaceViewManager.getInstance().srSurface = this.mCardMapSurfaceView.surface
-        startChangeService(width = mWidgetMapWidth, height = mWidgetMapHeight, surface = mCardMapSurfaceView.surface)
+        if (!SurfaceRecoveryPolicy.shouldRecoverOnHiddenChanged(hidden)) {
+            return
+        }
+
+        scheduleSurfaceRecovery(delayInMillis = 100L, reason = "onHiddenChanged")
     }
 
-    private fun startChangeService(width: Int, height: Int, surface: Surface) {
+    private fun scheduleSurfaceRecovery(delayInMillis: Long, reason: String) {
+        val rootView = view
+        if (rootView == null) {
+            if (mLogger.isDebugEnabled) {
+                mLogger.debug(
+                    "event=surface_recovery_skipped fragment={} reason={} delayMillis={}",
+                    this.javaClass.simpleName,
+                    "view_missing",
+                    delayInMillis
+                )
+            }
+            return
+        }
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=surface_recovery_scheduled fragment={} trigger={} delayMillis={} initialRecovered={} hidden={} surface={}",
+                this.javaClass.simpleName,
+                reason,
+                delayInMillis,
+                mHasCompletedInitialSurfaceRecovery,
+                isHidden,
+                describeSurface(mCardMapSurfaceView.surface)
+            )
+        }
+        rootView.postDelayed(delayInMillis = delayInMillis) {
+            recoverSurfaceSession(reason = reason)
+        }
+    }
+
+    private fun recoverSurfaceSession(reason: String) {
+        val surface = mCardMapSurfaceView.surface
+        SurfaceViewManager.getInstance().srSurface = surface
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=surface_recovery_started fragment={} trigger={} width={} height={} surface={}",
+                this.javaClass.simpleName,
+                reason,
+                mWidgetMapWidth,
+                mWidgetMapHeight,
+                describeSurface(surface)
+            )
+        }
+        for (step in SurfaceRecoveryPolicy.recoverySteps()) {
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=surface_recovery_step_started fragment={} trigger={} step={} surface={}",
+                    this.javaClass.simpleName,
+                    reason,
+                    step,
+                    describeSurface(surface)
+                )
+            }
+            when (step) {
+                SurfaceRecoveryPolicy.STEP_CREATE -> startCreateService(surface = surface, reason = reason)
+                SurfaceRecoveryPolicy.STEP_CHANGED -> startChangeService(
+                    width = mWidgetMapWidth,
+                    height = mWidgetMapHeight,
+                    surface = surface,
+                    reason = reason
+                )
+            }
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=surface_recovery_step_completed fragment={} trigger={} step={} surface={}",
+                    this.javaClass.simpleName,
+                    reason,
+                    step,
+                    describeSurface(surface)
+                )
+            }
+        }
+        mHasCompletedInitialSurfaceRecovery = true
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=surface_recovery_completed fragment={} trigger={} stepCount={} surface={} initialRecovered={}",
+                this.javaClass.simpleName,
+                reason,
+                SurfaceRecoveryPolicy.recoverySteps().size,
+                describeSurface(surface),
+                mHasCompletedInitialSurfaceRecovery
+            )
+        }
+    }
+
+    private fun startCreateService(surface: Surface, reason: String) {
         if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
             if (mLogger.isInfoEnabled) {
                 mLogger.info(
-                    "event=surface_change_service_skipped fragment={} reason={} width={} height={}",
+                    "event=surface_create_service_skipped fragment={} reason={} trigger={}",
+                    this.javaClass.simpleName,
+                    "running_test_platform",
+                    reason
+                )
+            }
+            return
+        }
+
+        val intent = Intent()
+        intent.action = ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CREATE
+        intent.putExtra(/* name = */ ConstantSurfaceViewManager.MAP_SURFACE, /* value = */ surface)
+        intent.setClassName(/* packageName = */ ConstantSurfaceViewManager.PACKAGE_NAME, /* className = */ ConstantSurfaceViewManager.CLASS_NAME)
+
+        if (mLogger.isInfoEnabled) {
+            mLogger.info(
+                "event=surface_create_service_start fragment={} trigger={} action={} surface={}",
+                this.javaClass.simpleName,
+                reason,
+                ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CREATE,
+                describeSurface(surface)
+            )
+        }
+
+        try {
+            requireContext().startService(intent)
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=surface_create_service_completed fragment={} trigger={} surface={}",
+                    this.javaClass.simpleName,
+                    reason,
+                    describeSurface(surface)
+                )
+            }
+        } catch (t: Throwable) {
+            mLogger.error("MapFullFragment:startCreateService", t)
+        }
+    }
+
+    private fun startChangeService(width: Int, height: Int, surface: Surface, reason: String) {
+        if (BuildConfig.IS_RUNNING_TEST_PLATFORM) {
+            if (mLogger.isInfoEnabled) {
+                mLogger.info(
+                    "event=surface_change_service_skipped fragment={} reason={} width={} height={} trigger={}",
                     this.javaClass.simpleName,
                     "running_test_platform",
                     width,
-                    height
+                    height,
+                    reason
                 )
             }
             return
@@ -253,11 +418,13 @@ class MapFullFragment : BaseFragment() {
 
         if (mLogger.isInfoEnabled) {
             mLogger.info(
-                "event=surface_change_service_start fragment={} width={} height={} action={}",
+                "event=surface_change_service_start fragment={} width={} height={} action={} trigger={} surface={}",
                 this.javaClass.simpleName,
                 width,
                 height,
-                ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CHANGED
+                ConstantSurfaceViewManager.ACTION_MAP_SURFACE_CHANGED,
+                reason,
+                describeSurface(surface)
             )
         }
 
@@ -265,15 +432,24 @@ class MapFullFragment : BaseFragment() {
             requireContext().startService(intent)
             if (mLogger.isInfoEnabled) {
                 mLogger.info(
-                    "event=surface_change_service_completed fragment={} width={} height={}",
+                    "event=surface_change_service_completed fragment={} width={} height={} trigger={} surface={}",
                     this.javaClass.simpleName,
                     width,
-                    height
+                    height,
+                    reason,
+                    describeSurface(surface)
                 )
             }
         } catch (t: Throwable) {
             mLogger.error("MapFullFragment:startChangeService", t)
         }
+    }
+
+    private fun describeSurface(surface: Surface?): String {
+        if (surface == null) {
+            return "null"
+        }
+        return "hash=${System.identityHashCode(surface)},valid=${surface.isValid}"
     }
 
     private fun <T> observer(block: (value: T) -> Unit): Observer<T> {
@@ -347,6 +523,23 @@ class MapFullFragment : BaseFragment() {
                 }
                 renderLeftSubCard(rawCardIndex = rawCardIndex)
             }
+        }
+    }
+
+    internal object SurfaceRecoveryPolicy {
+        const val STEP_CREATE: String = "create"
+        const val STEP_CHANGED: String = "changed"
+
+        fun recoverySteps(): List<String> {
+            return listOf(STEP_CREATE, STEP_CHANGED)
+        }
+
+        fun shouldRecoverOnResume(hasCompletedInitialSurfaceRecovery: Boolean, isHidden: Boolean): Boolean {
+            return hasCompletedInitialSurfaceRecovery && !isHidden
+        }
+
+        fun shouldRecoverOnHiddenChanged(hidden: Boolean): Boolean {
+            return !hidden
         }
     }
 
