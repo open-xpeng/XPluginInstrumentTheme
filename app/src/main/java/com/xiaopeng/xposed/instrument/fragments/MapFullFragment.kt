@@ -455,17 +455,6 @@ class MapFullFragment : BaseFragment() {
     private fun <T> observer(block: (value: T) -> Unit): Observer<T> {
         return object : Observer<T> {
             override fun onChanged(value: T) {
-                if (isHidden) {
-                    if (mLogger.isDebugEnabled) {
-                        mLogger.debug(
-                            "event=observer_skipped fragment={} reason={} valueClass={}",
-                            this@MapFullFragment.javaClass.simpleName,
-                            "fragment_hidden",
-                            value?.javaClass?.simpleName
-                        )
-                    }
-                    return
-                }
                 block(value)
             }
         }
@@ -498,18 +487,6 @@ class MapFullFragment : BaseFragment() {
                         mIsTbtVisible
                     )
                 }
-                if (isHidden) {
-                    if (mLogger.isDebugEnabled) {
-                        mLogger.debug(
-                            "event=observer_skipped fragment={} reason={} navActive={}",
-                            this@MapFullFragment.javaClass.simpleName,
-                            "fragment_hidden",
-                            mIsNavigationActive
-                        )
-                    }
-                    return
-                }
-
                 val rawCardIndex = mRawLeftSubCardIndex ?: run {
                     if (mLogger.isDebugEnabled) {
                         mLogger.debug(
